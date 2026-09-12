@@ -14,6 +14,16 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/login',
+    component: () => import('../pages/Login.vue'),
+    meta: { ssg: false },
+  },
+  {
+    path: '/register',
+    component: () => import('../pages/Register.vue'),
+    meta: { ssg: false },
+  },
+  {
     // Dashboard — SPA mode, tidak di-SSG
     path: '/dashboard',
     component: DashboardLayout,
@@ -34,6 +44,14 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'profil',
         component: () => import('../pages/dashboard/Profil.vue'),
+      },
+      {
+        path: 'jadwal',
+        component: () => import('../pages/dashboard/PsikologJadwal.vue'),
+      },
+      {
+        path: 'konsultasi',
+        component: () => import('../pages/dashboard/PsikologKonsultasi.vue'),
       },
     ],
   },

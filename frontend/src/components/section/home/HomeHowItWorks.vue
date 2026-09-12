@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineComponent, h } from 'vue'
-import { CalendarDaysIcon, DevicePhoneMobileIcon, UserGroupIcon, CheckBadgeIcon } from '@heroicons/vue/24/outline'
+import { CalendarDaysIcon, DevicePhoneMobileIcon, UserGroupIcon } from '@heroicons/vue/24/outline'
 
 // Ilustrasi inline ringan — pure HTML, zero extra dependencies
 const IllustrasiPilih = defineComponent({
