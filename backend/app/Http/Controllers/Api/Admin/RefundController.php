@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\Controller;
 use App\Http\Resources\RefundResource;
 use App\Models\Refund;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use Illuminate\Http\Request;
 
 class RefundController extends Controller
@@ -40,6 +42,10 @@ class RefundController extends Controller
 
         // TODO: Process actual refund via Midtrans refund API
         // TODO: Send WA notification
+        app(FonnteService::class)->notifyUser(
+            $refund->order->pasien,
+            WhatsAppMessages::refundApproved($refund)
+        );
 
         return $this->successResponse(
             new RefundResource($refund->fresh()->load(['order.pasien', 'order.psikolog', 'processedBy'])),
