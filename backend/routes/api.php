@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Api\Psikolog;
+use App\Http\Controllers\Api\Admin;
+use App\Http\Controllers\Api\MeetingController;
 use App\Http\Controllers\Api\Pasien\OrderController;
 use App\Http\Controllers\Api\Pasien\PaymentController;
 use App\Http\Controllers\Api\Pasien\BookingController;
@@ -108,9 +110,47 @@ Route::prefix('v1')->group(function () {
     });
 
     // ============================================
-    // ADMIN ROUTES (TODO: Step 7)
+    // ADMIN ROUTES (auth + role:admin)
     // ============================================
     Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
-        //
+        // Dashboard
+        Route::get('/dashboard', [Admin\DashboardController::class, 'index']);
+
+        // Manage Psikolog
+        Route::get('/psikolog', [Admin\PsikologController::class, 'index']);
+        Route::get('/psikolog/{user}', [Admin\PsikologController::class, 'show']);
+        Route::put('/psikolog/{user}/verify', [Admin\PsikologController::class, 'verify']);
+        Route::put('/psikolog/{user}/suspend', [Admin\PsikologController::class, 'suspend']);
+        Route::put('/psikolog/{user}/activate', [Admin\PsikologController::class, 'activate']);
+
+        // Categories (CRUD)
+        Route::apiResource('categories', Admin\CategoryController::class);
+
+        // Durations (CRUD)
+        Route::apiResource('durations', Admin\DurationController::class);
+
+        // Specializations (CRUD)
+        Route::apiResource('specializations', Admin\SpecializationController::class);
+
+        // Transactions
+        Route::get('/transactions', [Admin\TransactionController::class, 'index']);
+        Route::get('/transactions/{order}', [Admin\TransactionController::class, 'show']);
+
+        // Refunds
+        Route::get('/refunds', [Admin\RefundController::class, 'index']);
+        Route::put('/refunds/{refund}/approve', [Admin\RefundController::class, 'approve']);
+        Route::put('/refunds/{refund}/reject', [Admin\RefundController::class, 'reject']);
+
+        // Reports
+        Route::get('/reports/transactions', [Admin\ReportController::class, 'transactions']);
+        Route::get('/reports/psikolog', [Admin\ReportController::class, 'psikolog']);
+        Route::get('/reports/bookings', [Admin\ReportController::class, 'bookings']);
+    });
+
+    // ============================================
+    // MEETING ROUTES (auth only, both pasien & psikolog)
+    // ============================================
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/bookings/{booking}/meeting', [MeetingController::class, 'show']);
     });
 });
