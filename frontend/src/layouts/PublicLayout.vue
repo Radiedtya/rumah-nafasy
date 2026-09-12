@@ -9,7 +9,11 @@ const { initializeTheme } = useTheme()
 onMounted(initializeTheme)
 
 const navigationLinks: { label: string; href: string }[] = [
-  // { label: '', href: '/page' },
+  { label: 'Cara Kerja', href: '#cara-kerja' },
+  { label: 'Ulasan', href: '#ulasan' },
+  { label: 'Pertanyaan Umum', href: '#faq' },
+  { label: 'Para Ahli', href: '#ahli' },
+  { label: 'Artikel', href: '#blog' },
 ]
 
 const socialLinks = [
@@ -21,13 +25,13 @@ const socialLinks = [
 </script>
 
 <template>
-  <div class="flex min-h-svh min-w-80 flex-col bg-[var(--background)] font-sans text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility]">
+  <div class="app-shell flex min-h-svh min-w-80 flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility]">
     <Navbar
       :brand="{
-        name: '',
+        name: 'OurRitual',
         href: '/',
         mark: '',
-        ariaLabel: '',
+        ariaLabel: 'OurRitual, beranda',
       }"
       :links="navigationLinks"
     />

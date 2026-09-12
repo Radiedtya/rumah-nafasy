@@ -4,14 +4,6 @@ type Theme = 'light' | 'dark'
 const STORAGE_KEY = 'rumah-natasy-theme'
 const theme = ref<Theme>('light')
 
-const getSystemTheme = (): Theme => {
-  if (typeof window === 'undefined') {
-    return 'light'
-  }
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
 const applyTheme = (nextTheme: Theme) => {
   theme.value = nextTheme
 
@@ -34,7 +26,7 @@ const initializeTheme = () => {
   const initialTheme: Theme =
     savedTheme === 'dark' || savedTheme === 'light'
       ? savedTheme
-      : getSystemTheme()
+      : 'light'
   applyTheme(initialTheme)
 }
 

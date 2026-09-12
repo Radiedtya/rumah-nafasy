@@ -1,6 +1,13 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { ArrowUpRightIcon, MoonIcon, SunIcon } from '@heroicons/vue/24/outline'
+import {
+  ArrowUpRightIcon,
+  CalendarDaysIcon,
+  DevicePhoneMobileIcon,
+  MoonIcon,
+  SunIcon,
+  UserGroupIcon,
+} from '@heroicons/vue/24/outline'
 import { siBluesky, siInstagram, siTiktok, siX } from 'simple-icons'
 import router from './router'
 import './style.css'
@@ -13,6 +20,9 @@ app
   .component('ArrowUpRightIcon', ArrowUpRightIcon)
   .component('MoonIcon', MoonIcon)
   .component('SunIcon', SunIcon)
+  .component('CalendarDaysIcon', CalendarDaysIcon)
+  .component('DevicePhoneMobileIcon', DevicePhoneMobileIcon)
+  .component('UserGroupIcon', UserGroupIcon)
   .component('SimpleBlueskyIcon', {
     extends: SimpleIcon,
     props: { icon: { default: () => siBluesky } },
