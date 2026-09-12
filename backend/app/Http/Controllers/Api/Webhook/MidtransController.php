@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\Controller;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\MidtransService;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use Illuminate\Http\Request;
 
 class MidtransController extends Controller
@@ -55,6 +57,15 @@ class MidtransController extends Controller
                 'expires_at' => now()->addDays(7), // 7 hari untuk pilih jadwal
             ]);
 
+            app(FonnteService::class)->notifyUser(
+                $order->pasien,
+                WhatsAppMessages::paymentSuccessPasien($order)
+            );
+            app(FonnteService::class)->notifyUser(
+                $order->psikolog,
+                WhatsAppMessages::paymentSuccessPsikolog($order)
+            );
+
             return $this->successResponse([
                 'order_number' => $order->order_number,
                 'status' => 'paid',
@@ -93,6 +104,16 @@ class MidtransController extends Controller
                     'status' => 'paid',
                     'expires_at' => now()->addDays(7),
                 ]);
+
+                app(FonnteService::class)->notifyUser(
+                    $order->pasien,
+                    WhatsAppMessages::paymentSuccessPasien($order)
+                );
+                app(FonnteService::class)->notifyUser(
+                    $order->psikolog,
+                    WhatsAppMessages::paymentSuccessPsikolog($order)
+                );
+                
             } elseif ($mappedStatus === 'failed') {
                 $order->update(['status' => 'cancelled']);
             }
