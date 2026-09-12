@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Api\Psikolog;
 use App\Http\Controllers\Api\Admin;
+use App\Http\Controllers\Api\MeetingController;
 use App\Http\Controllers\Api\Pasien\OrderController;
 use App\Http\Controllers\Api\Pasien\PaymentController;
 use App\Http\Controllers\Api\Pasien\BookingController;
@@ -144,5 +145,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/reports/transactions', [Admin\ReportController::class, 'transactions']);
         Route::get('/reports/psikolog', [Admin\ReportController::class, 'psikolog']);
         Route::get('/reports/bookings', [Admin\ReportController::class, 'bookings']);
+    });
+
+    // ============================================
+    // MEETING ROUTES (auth only, both pasien & psikolog)
+    // ============================================
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/bookings/{booking}/meeting', [MeetingController::class, 'show']);
     });
 });
