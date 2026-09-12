@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Api\Pasien\OrderController;
 use App\Http\Controllers\Api\Pasien\PaymentController;
+use App\Http\Controllers\Api\Pasien\BookingController;
 use App\Http\Controllers\Api\Webhook\MidtransController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,18 +53,22 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{order}/payment', [PaymentController::class, 'create']);
         Route::get('/payments/{payment}', [PaymentController::class, 'show']);
 
-        // Booking (TODO: Step 5b)
-        // Route::post('/orders/{order}/schedule', [BookingController::class, 'store']);
-        // Route::put('/bookings/{booking}/reschedule', [BookingController::class, 'reschedule']);
-        // Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel']);
+        // Available slots (check before booking)
+        Route::get('/psikolog/{psikologId}/slots', [BookingController::class, 'availableSlots']);
+
+        // Bookings
+        Route::post('/orders/{order}/schedule', [BookingController::class, 'store']);
+        Route::get('/bookings', [BookingController::class, 'index']);
+        Route::get('/bookings/{booking}', [BookingController::class, 'show']);
+        Route::put('/bookings/{booking}/reschedule', [BookingController::class, 'reschedule']);
+        Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel']);
     });
 
     // ============================================
-    // WEBHOOK ROUTES (no auth, external callback)
+    // WEBHOOK ROUTES (no auth)
     // ============================================
     Route::prefix('webhooks')->group(function () {
         Route::post('/midtrans', [MidtransController::class, 'handle']);
-        // Also allow GET for mock testing
         Route::get('/midtrans', [MidtransController::class, 'handle']);
     });
 

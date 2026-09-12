@@ -21,8 +21,6 @@ class Schedule extends Model
     {
         return [
             'day_of_week' => 'integer',
-            'start_time' => 'datetime:H:i',
-            'end_time' => 'datetime:H:i',
             'is_available' => 'boolean',
         ];
     }
@@ -40,5 +38,17 @@ class Schedule extends Model
     {
         $days = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         return $days[$this->day_of_week] ?? 'Unknown';
+    }
+
+    // Accessors
+
+    public function getStartTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
+    }
+
+    public function getEndTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
     }
 }
