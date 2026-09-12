@@ -10,10 +10,10 @@ onMounted(initializeTheme)
 
 const navigationLinks: { label: string; href: string }[] = [
   { label: 'Cara Kerja', href: '#cara-kerja' },
+  { label: 'Psikolog', href: '#ahli' },
+  { label: 'Layanan', href: '#kategori' },
   { label: 'Ulasan', href: '#ulasan' },
-  { label: 'Pertanyaan Umum', href: '#faq' },
-  { label: 'Para Ahli', href: '#ahli' },
-  { label: 'Artikel', href: '#blog' },
+  { label: 'FAQ', href: '#faq' },
 ]
 
 const socialLinks = [
@@ -25,20 +25,23 @@ const socialLinks = [
 </script>
 
 <template>
-  <div class="app-shell flex min-h-svh min-w-80 flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility]">
+  <div
+    class="app-shell flex min-h-svh flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility] overflow-x-hidden"
+  >
     <Navbar
       :brand="{
         name: 'Rumah Natasy',
         href: '/',
         mark: '',
-        ariaLabel: 'beranda',
+        ariaLabel: 'Beranda Rumah Natasy',
       }"
       :links="navigationLinks"
     />
 
-    <main class="mx-auto flex w-[calc(100%-32px)] max-w-[1440px] flex-1 flex-col min-[701px]:w-[calc(100%-48px)]">
-      <RouterView /> <!-- this main -->
-      <Footer copyright="© 2026 Rumah Natasy" :social-links="socialLinks" />
+    <main class="w-full max-w-[1200px] mx-auto px-4 sm:px-6 flex-1 flex flex-col">
+      <RouterView />
     </main>
+
+    <Footer :copyright="`© ${new Date().getFullYear()} Rumah Natasy. Seluruh hak dilindungi.`" :social-links="socialLinks" />
   </div>
 </template>

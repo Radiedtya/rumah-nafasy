@@ -1,22 +1,40 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import PublicLayout from '../layouts/PublicLayout.vue'
-import Home from '../pages/Home.vue'
+import DashboardLayout from '../layouts/DashboardLayout.vue'
 
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-
-  routes: [
-    {
-      path: '/',
-      component: PublicLayout,
-      children: [
-        {
-          path: '',
-          component: Home,
-        },
-      ],
-    },
-  ],
-})
-
-export default router
+export const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    component: PublicLayout,
+    children: [
+      {
+        path: '',
+        component: () => import('../pages/Home.vue'),
+      },
+    ],
+  },
+  {
+    // Dashboard — SPA mode, tidak di-SSG
+    path: '/dashboard',
+    component: DashboardLayout,
+    meta: { ssg: false },
+    children: [
+      {
+        path: '',
+        component: () => import('../pages/dashboard/Overview.vue'),
+      },
+      {
+        path: 'sesi',
+        component: () => import('../pages/dashboard/Sesi.vue'),
+      },
+      {
+        path: 'psikolog',
+        component: () => import('../pages/dashboard/Psikolog.vue'),
+      },
+      {
+        path: 'profil',
+        component: () => import('../pages/dashboard/Profil.vue'),
+      },
+    ],
+  },
+]
