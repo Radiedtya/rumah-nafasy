@@ -28,16 +28,16 @@ const socialLinks = [
   <div class="app-shell flex min-h-svh min-w-80 flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility]">
     <Navbar
       :brand="{
-        name: 'OurRitual',
+        name: 'Rumah Natasy',
         href: '/',
         mark: '',
-        ariaLabel: 'OurRitual, beranda',
+        ariaLabel: 'beranda',
       }"
       :links="navigationLinks"
     />
 
     <main class="mx-auto flex w-[calc(100%-32px)] max-w-[1440px] flex-1 flex-col min-[701px]:w-[calc(100%-48px)]">
-      <RouterView />
+      <RouterView /> <!-- this main -->
       <Footer copyright="© 2026 Rumah Natasy" :social-links="socialLinks" />
     </main>
   </div>

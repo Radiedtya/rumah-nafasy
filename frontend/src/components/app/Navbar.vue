@@ -22,8 +22,18 @@ const { theme, toggleTheme } = useTheme()
 <template>
   <header class="site-header">
     <nav class="site-nav" aria-label="Navigasi utama">
-      <a class="brand font-display" :href="brand.href" :aria-label="brand.ariaLabel">
-        <span class="brand-mark" aria-hidden="true"><span></span><span></span></span>
+      <a
+        class="brand font-display"
+        :href="brand.href"
+        :aria-label="brand.ariaLabel"
+      >
+        <img
+          src="/icon.svg"
+          alt=""
+          aria-hidden="true"
+          class="block size-10 object-contain"
+        />
+
         <span>{{ brand.name }}</span>
       </a>
 

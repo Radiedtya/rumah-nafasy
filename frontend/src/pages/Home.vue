@@ -10,7 +10,7 @@ import HomeStats from '../components/section/home/HomeStats.vue'
                 <h1>Perkuat Hubungan Anda<br class="desktop-break" /> dengan Dukungan Personal</h1>
                 <p class="hero-description">
                     OurRitual adalah pendekatan baru untuk terapi pasangan, memadukan bimbingan ahli dengan
-                    pengalaman digital personal yang mendukung pertumbuhan dan kedekatan berkelanjutan
+                pengalaman digital personal yang mendukung pertumbuhan dan kedekatan berkelanjutan
                 </p>
                 <a class="button button-hero" href="#cara-kerja">Mulai Sekarang</a>
             </div>

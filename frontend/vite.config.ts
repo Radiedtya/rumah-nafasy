@@ -6,4 +6,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/rumah-natasy/' : '/',
   plugins: [vue(), tailwindcss()],
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
+  },
 })
