@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Carbon\Carbon;
 
 class Booking extends Model
 {
@@ -26,10 +27,19 @@ class Booking extends Model
     {
         return [
             'booking_date' => 'date',
-            'start_time' => 'datetime:H:i',
-            'end_time' => 'datetime:H:i',
             'locked_until' => 'datetime',
         ];
+    }
+
+    // Simplified accessors — pake substr, gak pake Carbon::parse
+    public function getStartTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
+    }
+
+    public function getEndTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
     }
 
     // Relationships
@@ -64,7 +74,7 @@ class Booking extends Model
         return $this->hasMany(RescheduleLog::class);
     }
 
-    // Helpers
+    // Helpers — FIX: pake booking_date->format() + accessor, bukan getRawOriginal
 
     public function isConfirmed(): bool
     {
@@ -101,14 +111,38 @@ class Booking extends Model
             return false;
         }
 
-        $consultationTime = $this->booking_date->setTimeFromTimeString($this->start_time);
+        if (!$this->booking_date) {
+            return false;
+        }
 
-        return $consultationTime->diffInHours(now()) >= 24;
+        // Use casted date + accessor time (clean, no double time issue)
+        $dateStr = $this->booking_date->format('Y-m-d');
+        $timeStr = $this->start_time; // accessor returns "H:i"
+
+        if (!$timeStr) {
+            return false;
+        }
+
+        $consultationTime = Carbon::parse($dateStr . ' ' . $timeStr);
+
+        // Must be at least 24 hours in the future
+        return $consultationTime->gt(now()->addHours(24));
     }
 
     public function canCancel(): bool
     {
-        $consultationTime = $this->booking_date->setTimeFromTimeString($this->start_time);
+        if (!$this->booking_date) {
+            return false;
+        }
+
+        $dateStr = $this->booking_date->format('Y-m-d');
+        $timeStr = $this->start_time;
+
+        if (!$timeStr) {
+            return false;
+        }
+
+        $consultationTime = Carbon::parse($dateStr . ' ' . $timeStr);
 
         return $consultationTime->isFuture();
     }

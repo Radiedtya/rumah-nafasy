@@ -26,10 +26,6 @@ class RescheduleLog extends Model
         return [
             'old_date' => 'date',
             'new_date' => 'date',
-            'old_start_time' => 'datetime:H:i',
-            'old_end_time' => 'datetime:H:i',
-            'new_start_time' => 'datetime:H:i',
-            'new_end_time' => 'datetime:H:i',
         ];
     }
 
@@ -55,5 +51,27 @@ class RescheduleLog extends Model
     public function isByAdmin(): bool
     {
         return $this->rescheduled_by === 'admin';
+    }
+
+    // Accessors
+
+    public function getOldStartTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
+    }
+
+    public function getOldEndTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
+    }
+
+    public function getNewStartTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
+    }
+
+    public function getNewEndTimeAttribute($value): string
+    {
+        return $value ? substr($value, 0, 5) : '';
     }
 }
