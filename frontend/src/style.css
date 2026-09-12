@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 /* ===== Accordion animations (Reka UI) ===== */
@@ -43,6 +43,8 @@
 
   --font-display: 'Geist', sans-serif;
   --font-body:    'Geist', sans-serif;
+  --font-weight-body: 300;
+  --font-weight-ui:   400;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -118,8 +120,14 @@ html {
 body {
   margin: 0;
   font-family: var(--font-body);
+  font-weight: 300;
   background: var(--background);
   overflow-x: hidden;
+}
+
+/* Paragraf dan teks deskripsi — selalu light */
+p, li, blockquote, figcaption {
+  font-weight: 300;
 }
 
 h1, h2, h3, h4, h5, h6, .font-display {
@@ -135,90 +143,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
   color: var(--ink);
 }
 
-/* ===== Navbar ===== */
-.site-header {
-  position: relative;
-  z-index: 50;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-.site-nav {
-  display: flex;
-  min-height: 88px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-}
-
-.brand {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 7px;
-  color: var(--ink);
-  font-size: 25px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  text-decoration: none;
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: clamp(24px, 3.1vw, 48px);
-  margin-left: auto;
-  margin-right: clamp(16px, 3vw, 48px);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.nav-links a,
-.login-link {
-  color: var(--ink);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 180ms ease;
-}
-
-.nav-links a:hover,
-.login-link:hover {
-  color: var(--accent);
-}
-
-.nav-actions {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 38px;
-}
-
-.theme-toggle {
-  display: inline-flex;
-  width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.theme-toggle:hover { color: var(--accent); }
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-}
-
-.login-link {
-  color: var(--accent);
-  font-size: 18px;
-  font-weight: 600;
-}
+/* ===== Navbar — lihat Navbar.vue (Tailwind) ===== */
 
 /* ===== Buttons ===== */
 .button {
