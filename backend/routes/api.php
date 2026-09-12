@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Public;
+use App\Http\Controllers\Api\Psikolog;
 use App\Http\Controllers\Api\Pasien\OrderController;
 use App\Http\Controllers\Api\Pasien\PaymentController;
 use App\Http\Controllers\Api\Pasien\BookingController;
@@ -73,10 +74,37 @@ Route::prefix('v1')->group(function () {
     });
 
     // ============================================
-    // PSIKOLOG ROUTES (TODO: Step 6)
+    // PSIKOLOG ROUTES (auth + role:psikolog)
     // ============================================
     Route::middleware(['auth:sanctum', 'role:psikolog'])->prefix('psikolog')->group(function () {
-        //
+        // Dashboard
+        Route::get('/dashboard', [Psikolog\DashboardController::class, 'index']);
+
+        // Schedules
+        Route::apiResource('schedules', Psikolog\ScheduleController::class);
+
+        // Bookings
+        Route::get('/bookings', [Psikolog\BookingController::class, 'index']);
+        Route::get('/bookings/{booking}', [Psikolog\BookingController::class, 'show']);
+        Route::put('/bookings/{booking}/status', [Psikolog\BookingController::class, 'updateStatus']);
+
+        // Consultations
+        Route::get('/consultations', [Psikolog\ConsultationController::class, 'index']);
+        Route::get('/consultations/{consultation}', [Psikolog\ConsultationController::class, 'show']);
+        Route::post('/bookings/{booking}/consultation/start', [Psikolog\ConsultationController::class, 'start']);
+        Route::post('/consultations/{consultation}/end', [Psikolog\ConsultationController::class, 'end']);
+
+        // Consultation Notes
+        Route::get('/consultations/{consultation}/notes', [Psikolog\ConsultationNoteController::class, 'index']);
+        Route::post('/consultations/{consultation}/notes', [Psikolog\ConsultationNoteController::class, 'store']);
+
+        // Profile
+        Route::get('/profile', [Psikolog\ProfileController::class, 'show']);
+        Route::put('/profile', [Psikolog\ProfileController::class, 'update']);
+
+        // Income
+        Route::get('/income', [Psikolog\IncomeController::class, 'index']);
+        Route::get('/income/report', [Psikolog\IncomeController::class, 'report']);
     });
 
     // ============================================
