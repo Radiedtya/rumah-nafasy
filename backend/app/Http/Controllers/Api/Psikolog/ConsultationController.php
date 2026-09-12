@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\Controller;
 use App\Http\Resources\ConsultationResource;
 use App\Models\Booking;
 use App\Models\Consultation;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use Illuminate\Http\Request;
 
 class ConsultationController extends Controller
@@ -91,6 +93,11 @@ class ConsultationController extends Controller
         }
 
         $consultation->load(['booking.order.category', 'booking.pasien', 'notes']);
+
+        app(FonnteService::class)->notifyUser(
+            $consultation->booking->pasien,
+            WhatsAppMessages::consultationCompleted($consultation->booking)
+        );
 
         return $this->successResponse(
             new ConsultationResource($consultation),

@@ -9,6 +9,8 @@ use App\Models\ClientCategory;
 use App\Models\DurationOption;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use App\Services\PricingService;
 use Illuminate\Http\Request;
 
@@ -82,6 +84,11 @@ class OrderController extends Controller
 
         $order->load(['psikolog.psikologProfile.specialization', 'category', 'duration']);
 
+        app(FonnteService::class)->notifyUser(
+            $order->pasien,
+            WhatsAppMessages::orderCreated($order)
+        );
+        
         return $this->successResponse(
             new OrderResource($order),
             'Pesanan dibuat. Silakan lakukan pembayaran dalam 24 jam.',
