@@ -70,15 +70,15 @@ const closeMobile = () => { mobileOpen.value = false }
 
       <!-- Actions kanan — desktop -->
       <div class="hidden md:flex items-center gap-2 ml-auto shrink-0">
-        <a
-          href="#mulai"
+        <RouterLink
+          to="/dashboard"
           class="inline-flex items-center h-[36px] px-4 rounded-lg bg-[var(--ink)] text-[var(--inverse-text)] text-[14px] font-semibold no-underline tracking-tight hover:opacity-80 transition-opacity duration-150"
         >
-          Mulai
+          Masuk Dashboard
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
             <path d="M2.5 7h9M7.5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </a>
+        </RouterLink>
       </div>
 
       <!-- Burger — mobile only -->
