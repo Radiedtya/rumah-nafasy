@@ -10,7 +10,8 @@ use App\Models\Booking;
 use App\Models\Order;
 use App\Models\Refund;
 use App\Models\RescheduleLog;
-// use App\Models\Schedule;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use App\Models\User;
 use App\Services\BookingService;
 use Carbon\Carbon;
@@ -26,7 +27,7 @@ class BookingController extends Controller
     /**
      * Get available slots for a psikolog on a specific date.
      */
-    public function availableSlots(Request $request, $psikologId)
+    public function availableSlots(Request $request, int $psikologId)
     {
         $request->validate([
             'date' => ['required', 'date', 'after_or_equal:today'],
@@ -114,6 +115,15 @@ class BookingController extends Controller
         ]);
 
         $booking->load(['order.category', 'order.duration', 'psikolog.psikologProfile']);
+
+        app(FonnteService::class)->notifyUser(
+            $booking->pasien,
+            WhatsAppMessages::bookingConfirmed($booking)
+        );
+        app(FonnteService::class)->notifyUser(
+            $booking->psikolog,
+            WhatsAppMessages::bookingConfirmedPsikolog($booking)
+        );
 
         return $this->successResponse(
             new BookingResource($booking),
@@ -220,6 +230,15 @@ class BookingController extends Controller
 
         $booking->load(['order.category', 'order.duration', 'psikolog.psikologProfile', 'rescheduleLogs']);
 
+        app(FonnteService::class)->notifyUser(
+            $booking->pasien,
+            WhatsAppMessages::rescheduled($booking)
+        );
+        app(FonnteService::class)->notifyUser(
+            $booking->psikolog,
+            WhatsAppMessages::rescheduled($booking)
+        );
+
         return $this->successResponse(
             new BookingResource($booking),
             'Jadwal berhasil diubah'
@@ -266,6 +285,15 @@ class BookingController extends Controller
         $booking->order->update(['status' => 'cancelled']);
 
         $booking->load(['order.category', 'order.duration', 'psikolog.psikologProfile']);
+
+        app(FonnteService::class)->notifyUser(
+            $booking->pasien,
+            WhatsAppMessages::bookingCancelled($booking, $refund)
+        );
+        app(FonnteService::class)->notifyUser(
+            $booking->psikolog,
+            WhatsAppMessages::bookingCancelled($booking, $refund)
+        );
 
         return $this->successResponse([
             'booking' => new BookingResource($booking),

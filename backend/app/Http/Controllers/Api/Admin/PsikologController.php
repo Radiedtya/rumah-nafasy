@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use Illuminate\Http\Request;
 
 class PsikologController extends Controller
@@ -53,6 +55,10 @@ class PsikologController extends Controller
         ]);
 
         // TODO: Send WA notification
+        app(FonnteService::class)->notifyUser(
+            $user,
+            WhatsAppMessages::psikologVerified($user)
+        );
 
         return $this->successResponse(
             new UserResource($user->fresh()->load(['psikologProfile.specialization', 'roles'])),
