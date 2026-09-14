@@ -3,14 +3,17 @@ const steps = [
   {
     title: 'Temukan Psikolog Anda',
     description: 'Ceritakan kondisi Anda dan kami cocokkan dengan psikolog berlisensi yang paling sesuai. Semua tersertifikasi SIP dan HIMPsi.',
+    image: '/images/step/01.png',
   },
   {
     title: 'Atur Jadwal Fleksibel',
     description: 'Pilih waktu yang nyaman. Reschedule mudah tanpa biaya tambahan, tersedia 7 hari seminggu termasuk malam hari.',
+    image: '/images/step/02.png',
   },
   {
     title: 'Mulai Sesi Konsultasi',
     description: 'Konsultasi via video call atau chat teks dari mana saja. Privasi terlindungi, tidak ada rekaman, sepenuhnya rahasia.',
+    image: '/images/step/03.png',
   },
 ]
 </script>
@@ -33,7 +36,7 @@ const steps = [
         :key="step.title"
         class="step-item relative"
       >
-        <article class="step-card relative z-[1] h-full rounded-3xl bg-[var(--surface)] border border-[var(--line)] p-8 flex flex-col items-center text-center gap-5 overflow-visible hover:border-[var(--accent)]/40 transition-colors duration-300">
+        <article class="step-card relative z-[1] h-full rounded-3xl bg-[var(--surface)] border border-[var(--line)] p-8 flex flex-col items-center text-center gap-5 overflow-visible hover:border-[var(--accent)]/40 transition-colors duration-200">
 
         <!-- Teks -->
         <div class="relative z-10">
@@ -41,12 +44,15 @@ const steps = [
           <p class="text-[var(--copy)] text-sm leading-relaxed">{{ step.description }}</p>
         </div>
 
-        <!-- Ganti src placeholder ini dengan ilustrasi asli berukuran 640 x 280 px. -->
-        <div class="relative z-10 mt-2 aspect-[640/280] w-full overflow-hidden rounded-2xl bg-[var(--line)]/20">
+        <!-- Ganti image masing-masing step dengan ilustrasi asli; object-contain mencegah gambar terpotong. -->
+        <div
+          class="step-image relative z-10 mt-2 -mx-6 aspect-[640/440] w-[calc(100%+3rem)] overflow-hidden rounded-2xl bg-[var(--line)]/20"
+          :class="{ 'step-image-third': stepIndex === 2 }"
+        >
           <img
-            src="https://placehold.co/640x280/e8edf2/697586?text=Ilustrasi+640+x+280"
-            alt="Placeholder ilustrasi langkah konsultasi"
-            class="block h-full w-full object-cover"
+            :src="step.image"
+            :alt="`Placeholder ilustrasi ${step.title}`"
+            class="block h-full w-full object-contain"
           />
         </div>
         </article>
@@ -71,6 +77,16 @@ const steps = [
   height: 2px;
   background: var(--muted);
   pointer-events: none;
+}
+
+.step-card,
+.step-image {
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.step-image-third img {
+  transform: translateX(24%) scale(1.8);
+  transform-origin: center;
 }
 
 .step-connector::before,
