@@ -1,6 +1,6 @@
 <template>
-  <section class="w-full border-y border-[var(--line)]" aria-label="Statistik Rumah Natasy">
-    <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line)]">
+  <section class="stats-section w-screen border-y border-[var(--line)]" aria-label="Statistik Rumah Natasy">
+    <div class="mx-auto grid w-full max-w-[1200px] grid-cols-1 divide-y divide-[var(--line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
 
       <!-- Item 1 -->
       <div class="flex flex-col items-center px-8 py-10 text-center">
@@ -42,3 +42,9 @@
 <script setup lang="ts">
 import { CurrencyDollarIcon, HeartIcon, HandThumbUpIcon } from '@heroicons/vue/24/outline'
 </script>
+
+<style scoped>
+.stats-section {
+  margin-left: calc(50% - 50vw);
+}
+</style>
