@@ -43,58 +43,81 @@ const closeMobile = () => { mobileOpen.value = false }
 
 <template>
   <!-- DESKTOP NAVBAR -->
-  <header class="sticky top-0 z-50 w-full bg-[color-mix(in_srgb,var(--background)_85%,transparent)] backdrop-blur-md">
-    <nav
-      class="flex items-center h-[72px] w-full max-w-[1200px] mx-auto px-6 gap-2"
-      aria-label="Navigasi utama"
-    >
-      <!-- Brand -->
-      <a
-        :href="brand.href"
-        :aria-label="brand.ariaLabel"
-        class="inline-flex items-center gap-2 shrink-0 mr-8 text-[var(--ink)] no-underline font-bold text-[17px] tracking-tight"
-      >
-        <img src="/icon.svg" alt="" aria-hidden="true" class="w-7 h-7 object-contain" />
-        <span>{{ brand.name }}</span>
-      </a>
+  <header class="fixed top-0 right-0 left-0 z-50 w-full px-6 pt-0">
+    <div class="mx-auto w-full max-w-[1420px] overflow-hidden rounded-b-[30px] shadow-[0_1px_0_rgba(17,17,17,0.08)]">
+      <!-- Announcement strip -->
+      <div class="flex h-[40px] items-center justify-between bg-[#4a0035] px-6 text-white sm:px-7">
+        <a href="#mulai" class="inline-flex min-w-0 items-center gap-3 no-underline" aria-label="Mulai konsultasi">
+          <span class="hidden text-[20px] font-extrabold leading-none tracking-[-0.08em] text-[#fffbf0] sm:inline">rumah</span>
+          <span class="truncate text-[13px] font-medium tracking-[-0.01em] text-[#f7b6f5] sm:text-[15px]">Temani perjalanan kesehatan mental Anda.</span>
+        </a>
+        <a href="#mulai" class="ml-4 inline-flex shrink-0 items-center gap-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#f6ed5b] no-underline transition-opacity hover:opacity-75 sm:text-[12px]">
+          Mulai sekarang
+          <span aria-hidden="true" class="text-[17px] leading-none">→</span>
+        </a>
+      </div>
 
-      <!-- Nav links — desktop, tengah -->
-      <div class="hidden md:flex items-center gap-0.5" aria-label="Menu utama">
+      <nav
+        class="flex h-[58px] items-center gap-2 bg-[var(--surface)] px-6 sm:px-7"
+        aria-label="Navigasi utama"
+      >
+        <!-- Brand -->
         <a
-          v-for="link in links"
-          :key="link.href"
-          :href="link.href"
-          class="px-3.5 py-1.5 rounded-lg text-[14px] font-light text-[var(--muted)] no-underline tracking-wide hover:text-[var(--ink)] hover:bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] transition-colors duration-150"
-        >{{ link.label }}</a>
-      </div>
-
-      <!-- Actions kanan — desktop -->
-      <div class="hidden md:flex items-center gap-2 ml-auto shrink-0">
-        <RouterLink
-          to="/dashboard"
-          class="inline-flex items-center h-[36px] px-4 rounded-lg bg-[var(--ink)] text-[var(--inverse-text)] text-[14px] font-semibold no-underline tracking-tight hover:opacity-80 transition-opacity duration-150"
+          :href="brand.href"
+          :aria-label="brand.ariaLabel"
+          class="inline-flex shrink-0 items-center gap-2 pr-7 text-[var(--ink)] no-underline"
         >
-          Masuk Dashboard
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
-            <path d="M2.5 7h9M7.5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </RouterLink>
-      </div>
+          <img src="/icon.svg" alt="" aria-hidden="true" class="h-6 w-6 object-contain" />
+          <span class="text-[19px] font-bold leading-none tracking-[-0.055em]">{{ brand.name }}</span>
+        </a>
 
-      <!-- Burger — mobile only -->
-      <button
-        type="button"
-        class="md:hidden ml-auto flex flex-col justify-center gap-[5px] w-[34px] h-[34px] p-[7px] bg-transparent border-none rounded-lg cursor-pointer"
-        :aria-label="mobileOpen ? 'Tutup menu' : 'Buka menu'"
-        :aria-expanded="mobileOpen"
-        aria-controls="mobile-menu"
-        @click="mobileOpen = true"
-      >
-        <span class="block h-[1.5px] w-full rounded-sm bg-[var(--ink)]" aria-hidden="true" />
-        <span class="block h-[1.5px] w-full rounded-sm bg-[var(--ink)]" aria-hidden="true" />
-        <span class="block h-[1.5px] w-full rounded-sm bg-[var(--ink)]" aria-hidden="true" />
-      </button>
-    </nav>
+        <!-- Nav links — desktop, tengah -->
+        <div class="hidden items-center gap-1 md:flex" aria-label="Menu utama">
+          <a
+            v-for="link in links"
+            :key="link.href"
+            :href="link.href"
+            class="rounded-lg px-3.5 py-2 text-[15px] font-normal tracking-[-0.02em] text-[var(--text)] no-underline transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--text)_7%,transparent)] hover:text-[var(--ink)]"
+          >{{ link.label }}</a>
+        </div>
+
+        <!-- Actions kanan — desktop -->
+        <div class="ml-auto hidden shrink-0 items-center gap-2 md:flex">
+          <button
+            type="button"
+            class="inline-flex h-6 w-6 items-center justify-center border-none bg-transparent p-0 text-[var(--muted)] transition-colors hover:text-[var(--text)]"
+            :aria-label="theme === 'light' ? 'Aktifkan dark mode' : 'Aktifkan light mode'"
+            @click="toggleTheme"
+          >
+            <SunIcon v-if="theme === 'light'" :size="12" aria-hidden="true" />
+            <MoonIcon v-else :size="12" aria-hidden="true" />
+          </button>
+          <RouterLink
+            to="/dashboard"
+            class="inline-flex h-[40px] items-center rounded-[12px] bg-[var(--ink)] px-4 text-[13px] font-semibold tracking-[-0.02em] text-[var(--inverse-text)] no-underline transition-opacity duration-150 hover:opacity-80"
+          >
+            Masuk Dashboard
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
+              <path d="M2.5 7h9M7.5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </RouterLink>
+        </div>
+
+        <!-- Burger — mobile only -->
+        <button
+          type="button"
+          class="ml-auto flex h-[34px] w-[34px] flex-col justify-center gap-[5px] rounded-lg border-none bg-transparent p-[7px] md:hidden"
+          :aria-label="mobileOpen ? 'Tutup menu' : 'Buka menu'"
+          :aria-expanded="mobileOpen"
+          aria-controls="mobile-menu"
+          @click="mobileOpen = true"
+        >
+          <span class="block h-[1.5px] w-full rounded-sm bg-[var(--ink)]" aria-hidden="true" />
+          <span class="block h-[1.5px] w-full rounded-sm bg-[var(--ink)]" aria-hidden="true" />
+          <span class="block h-[1.5px] w-full rounded-sm bg-[var(--ink)]" aria-hidden="true" />
+        </button>
+      </nav>
+    </div>
   </header>
 
   <!-- MOBILE MENU OVERLAY -->
