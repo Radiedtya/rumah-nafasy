@@ -1,102 +1,16 @@
 <script setup lang="ts">
-import { defineComponent, h } from 'vue'
-import { CalendarDaysIcon, DevicePhoneMobileIcon, UserGroupIcon } from '@heroicons/vue/24/outline'
-
-// Ilustrasi inline ringan — pure HTML, zero extra dependencies
-const IllustrasiPilih = defineComponent({
-  name: 'IllustrasiPilih',
-  render() {
-    return h('div', { class: 'p-5 w-full' }, [
-      h('p', { class: 'text-[10px] text-[var(--muted)] mb-3 uppercase tracking-widest' }, 'Temukan psikolog'),
-      h('div', { class: 'flex flex-wrap gap-2 justify-center' },
-        ['Kecemasan', 'Depresi', 'Hubungan', 'Trauma'].map((tag) =>
-          h('span', { class: 'text-xs px-3 py-1.5 rounded-full border border-[var(--line)] text-[var(--copy)] bg-[var(--background)]' }, tag)
-        )
-      ),
-      h('div', { class: 'mt-4 flex items-center gap-3 bg-[var(--background)] rounded-2xl p-3 border border-[var(--line)]' }, [
-        h('div', { class: 'w-10 h-10 rounded-full bg-gradient-to-br from-rose-300 to-orange-200 shrink-0', 'aria-hidden': 'true' }),
-        h('div', { class: 'min-w-0' }, [
-          h('p', { class: 'text-xs font-semibold text-[var(--ink)] truncate' }, 'Dr. Sari Dewi, M.Psi'),
-          h('p', { class: 'text-[10px] text-[var(--muted)]' }, 'Kecemasan · Trauma'),
-        ]),
-        h('span', { class: 'ml-auto text-[10px] text-emerald-600 font-semibold shrink-0' }, '✓ SIP'),
-      ]),
-    ])
-  },
-})
-
-const IllustrasiJadwal = defineComponent({
-  name: 'IllustrasiJadwal',
-  render() {
-    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-    return h('div', { class: 'p-5 w-full' }, [
-      h('p', { class: 'text-[10px] text-[var(--muted)] mb-3 uppercase tracking-widest' }, 'Pilih jadwal'),
-      h('div', { class: 'grid grid-cols-7 gap-1 text-center mb-3' },
-        days.map((d, i) =>
-          h('div', {
-            class: `text-[9px] py-1.5 rounded-lg font-medium ${i === 2 ? 'bg-[var(--accent)] text-white' : 'bg-[var(--line)]/40 text-[var(--muted)]'}`,
-          }, d)
-        )
-      ),
-      h('div', { class: 'flex flex-wrap gap-2 justify-center' },
-        ['09.00', '10.00', '13.00', '15.00'].map((t, i) =>
-          h('span', {
-            class: `text-[11px] px-3 py-1.5 rounded-full border font-medium ${i === 1 ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/5' : 'border-[var(--line)] text-[var(--copy)]'}`,
-          }, t)
-        )
-      ),
-    ])
-  },
-})
-
-const IllustrasiSesi = defineComponent({
-  name: 'IllustrasiSesi',
-  render() {
-    return h('div', { class: 'p-5 w-full' }, [
-      h('div', { class: 'bg-[var(--background)] rounded-2xl border border-[var(--line)] overflow-hidden' }, [
-        h('div', { class: 'bg-[var(--ink)] h-14 rounded-t-2xl flex items-center justify-center gap-3', 'aria-hidden': 'true' }, [
-          h('div', { class: 'w-10 h-10 rounded-full bg-gradient-to-br from-rose-300 to-orange-200' }),
-          h('div', { class: 'w-14 h-10 rounded-xl bg-gradient-to-br from-sky-300 to-blue-200' }),
-        ]),
-        h('div', { class: 'p-3' }, [
-          h('div', { class: 'flex gap-2 mb-2' }, [
-            h('div', { class: 'h-2 rounded bg-[var(--line)] flex-1' }),
-            h('div', { class: 'h-2 rounded bg-[var(--accent)]/30 w-8' }),
-          ]),
-          h('p', { class: 'text-[10px] text-[var(--muted)]' }, '🎥 Sesi berlangsung · 45 menit'),
-        ]),
-      ]),
-    ])
-  },
-})
-
 const steps = [
   {
-    number: '01',
     title: 'Temukan Psikolog Anda',
     description: 'Ceritakan kondisi Anda dan kami cocokkan dengan psikolog berlisensi yang paling sesuai. Semua tersertifikasi SIP dan HIMPsi.',
-    icon: UserGroupIcon,
-    iconBg: 'bg-rose-100',
-    iconColor: 'text-[var(--accent)]',
-    illustration: IllustrasiPilih,
   },
   {
-    number: '02',
     title: 'Atur Jadwal Fleksibel',
     description: 'Pilih waktu yang nyaman. Reschedule mudah tanpa biaya tambahan, tersedia 7 hari seminggu termasuk malam hari.',
-    icon: CalendarDaysIcon,
-    iconBg: 'bg-sky-100',
-    iconColor: 'text-sky-500',
-    illustration: IllustrasiJadwal,
   },
   {
-    number: '03',
     title: 'Mulai Sesi Konsultasi',
     description: 'Konsultasi via video call atau chat teks dari mana saja. Privasi terlindungi, tidak ada rekaman, sepenuhnya rahasia.',
-    icon: DevicePhoneMobileIcon,
-    iconBg: 'bg-emerald-100',
-    iconColor: 'text-emerald-600',
-    illustration: IllustrasiSesi,
   },
 ]
 </script>
@@ -113,27 +27,13 @@ const steps = [
       </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <article
-        v-for="step in steps"
-        :key="step.number"
-        class="relative rounded-3xl bg-[var(--surface)] border border-[var(--line)] p-8 flex flex-col items-center text-center gap-5 overflow-hidden hover:border-[var(--accent)]/40 transition-colors duration-300"
+    <div class="grid grid-cols-1 gap-12 md:grid-cols-3">
+      <div
+        v-for="(step, stepIndex) in steps"
+        :key="step.title"
+        class="step-item relative"
       >
-        <!-- Nomor besar di background -->
-        <span
-          class="absolute top-4 right-6 font-display text-7xl font-bold text-[var(--line)] select-none pointer-events-none leading-none"
-          aria-hidden="true"
-        >
-          {{ step.number }}
-        </span>
-
-        <!-- Icon -->
-        <div
-          class="relative z-10 w-16 h-16 rounded-2xl flex items-center justify-center"
-          :class="step.iconBg"
-        >
-          <component :is="step.icon" class="w-8 h-8" :class="step.iconColor" aria-hidden="true" />
-        </div>
+        <article class="step-card relative z-[1] h-full rounded-3xl bg-[var(--surface)] border border-[var(--line)] p-8 flex flex-col items-center text-center gap-5 overflow-visible hover:border-[var(--accent)]/40 transition-colors duration-300">
 
         <!-- Teks -->
         <div class="relative z-10">
@@ -141,11 +41,66 @@ const steps = [
           <p class="text-[var(--copy)] text-sm leading-relaxed">{{ step.description }}</p>
         </div>
 
-        <!-- Ilustrasi -->
-        <div class="relative z-10 w-full rounded-2xl overflow-hidden bg-[var(--line)]/20 mt-2 min-h-[140px] flex items-center justify-center">
-          <component :is="step.illustration" />
+        <!-- Ganti src placeholder ini dengan ilustrasi asli berukuran 640 x 280 px. -->
+        <div class="relative z-10 mt-2 aspect-[640/280] w-full overflow-hidden rounded-2xl bg-[var(--line)]/20">
+          <img
+            src="https://placehold.co/640x280/e8edf2/697586?text=Ilustrasi+640+x+280"
+            alt="Placeholder ilustrasi langkah konsultasi"
+            class="block h-full w-full object-cover"
+          />
         </div>
-      </article>
+        </article>
+        <span
+          v-if="stepIndex < steps.length - 1"
+          class="step-connector"
+          :class="{ 'step-connector-top': stepIndex === 1 }"
+          aria-hidden="true"
+        />
+      </div>
     </div>
   </section>
 </template>
+
+<style scoped>
+.step-connector {
+  position: absolute;
+  z-index: 0;
+  right: -48px;
+  bottom: 56px;
+  width: 48px;
+  height: 2px;
+  background: var(--muted);
+  pointer-events: none;
+}
+
+.step-connector::before,
+.step-connector::after {
+  position: absolute;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--muted);
+  content: '';
+  transform: translateY(-50%);
+}
+
+.step-connector::before {
+  left: -17px;
+}
+
+.step-connector::after {
+  right: -17px;
+}
+
+.step-connector-top {
+  top: 56px;
+  bottom: auto;
+}
+
+@media (max-width: 767px) {
+  .step-connector {
+    display: none;
+  }
+}
+</style>
