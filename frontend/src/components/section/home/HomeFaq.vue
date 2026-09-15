@@ -51,32 +51,6 @@
 
     </div>
 
-    <!-- ── CTA STRIP ── -->
-    <div class="faq-cta">
-      <h2 id="faq-heading" class="faq-cta-heading">Tetap terhubung</h2>
-      <p class="faq-cta-sub">Dapatkan artikel kesehatan mental dan info promo langsung di inbox Anda.</p>
-      <form class="faq-form" @submit.prevent="submitEmail">
-        <label for="faq-email" class="faq-form-label">Alamat email</label>
-        <div class="faq-form-row">
-          <input
-            id="faq-email"
-            v-model="email"
-            type="email"
-            class="faq-input"
-            placeholder="Masukkan email"
-            required
-            autocomplete="email"
-          />
-          <button type="submit" class="faq-submit">Kirim</button>
-        </div>
-        <p class="faq-form-note">
-          Dengan mendaftar, Anda menyetujui
-          <a href="#" class="faq-form-link">Syarat & Ketentuan</a>
-          kami.
-        </p>
-      </form>
-    </div>
-
   </section>
 </template>
 
@@ -84,15 +58,9 @@
 import { ref } from 'vue'
 
 const openIdx = ref<number | null>(null)
-const email   = ref('')
 
 function toggle(idx: number) {
   openIdx.value = openIdx.value === idx ? null : idx
-}
-
-function submitEmail() {
-  // TODO: integrate with newsletter API
-  email.value = ''
 }
 
 const faqs = [

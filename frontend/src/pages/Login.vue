@@ -74,7 +74,7 @@ async function handleLogin() {
     </section>
 
     <section class="login-visual" aria-label="Visual platform Rumah Natasy">
-      <img src="https://placehold.co/1000x1200/073b77/ffffff.png?text=Rumah+Natasy+Visual" alt="Placeholder visual platform Rumah Natasy" />
+      <img src="/images/assets/login.png" alt="Placeholder visual platform Rumah Natasy" />
     </section>
   </div>
 </template>
