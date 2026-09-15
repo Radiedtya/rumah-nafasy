@@ -38,7 +38,7 @@ const socialLinks = [
       :links="navigationLinks"
     />
 
-    <main class="w-full max-w-[1200px] mx-auto px-4 sm:px-6 flex-1 flex flex-col">
+    <main class="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex-1 flex flex-col">
       <RouterView />
     </main>
 

@@ -62,6 +62,7 @@ function scrollPsychologists(direction: number) {
 
 <template>
   <section id="ahli" aria-labelledby="psikolog-heading" class="psychologist-section">
+    <div class="w-full max-w-[1200px] mx-auto px-4 sm:px-6">
     <div class="psychologist-header">
       <div>
         <h2 id="psikolog-heading">Psikolog pilihan untuk Anda</h2>
@@ -114,11 +115,27 @@ function scrollPsychologists(direction: number) {
     </div>
 
     <p class="verification-note"><CheckBadgeIcon aria-hidden="true" /> Seluruh psikolog telah terverifikasi SIP dan HIMPsi.</p>
+    </div>
   </section>
 </template>
 
 <style scoped>
-.psychologist-section { padding: 88px 0; color: var(--text); }
+.psychologist-section {
+  position: relative;
+  /* Keluar dari batas main container agar menutupi rail kiri/kanan */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: 88px 0;
+  /* Background menutupi rail pseudo-element dari main */
+  background: var(--background);
+  z-index: 1;
+  /* Override global section border, pasang sendiri full-width */
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  /* Hapus border yang mungkin datang dari global rule */
+  margin-top: -1px;
+  color: var(--text);
+}
 .psychologist-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
 .psychologist-header h2 { margin: 0; color: var(--ink); font-family: var(--font-display); font-size: clamp(1.7rem, 3vw, 2.25rem); font-weight: 700; letter-spacing: -0.055em; }
 .availability-filter { display: inline-flex; align-items: center; gap: 9px; margin-top: 22px; color: var(--copy); font-size: 14px; cursor: pointer; }
@@ -128,7 +145,7 @@ function scrollPsychologists(direction: number) {
 .availability-filter input:not(:checked) + .filter-switch span { background: var(--muted); transform: translateX(15px); }
 .see-all { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-size: 14px; font-weight: 700; text-decoration: none; }
 .see-all svg, .book-button svg { width: 17px; height: 17px; }
-.psychologist-grid { display: flex; width: calc(100vw - max(24px, (100vw - 1200px) / 2 + 24px)); gap: 18px; overflow-x: auto; padding: 0 24px 10px 2px; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.psychologist-grid { display: flex; width: calc(100vw - max(24px, (100vw - 1280px) / 2 + 24px)); gap: 18px; overflow-x: auto; padding: 0 24px 10px 2px; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .psychologist-grid::-webkit-scrollbar { height: 6px; }
 .psychologist-grid::-webkit-scrollbar-track { background: transparent; }
 .psychologist-grid::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }

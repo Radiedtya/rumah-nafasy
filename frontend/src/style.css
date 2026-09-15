@@ -50,8 +50,8 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --background: #111111;
-    --surface:    #1a1a1a;
+    --background: #000000;
+    --surface:    #0c0c0c;
     --text:       #f4f4ef;
     --muted:      #a3a39d;
     --line:       #383834;
@@ -77,8 +77,8 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --background: #111111;
-  --surface:    #1a1a1a;
+  --background: #000000;
+  --surface:    #0c0c0c;
   --text:       #f4f4ef;
   --muted:      #a3a39d;
   --line:       #383834;
@@ -143,6 +143,52 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .app-shell {
   color: var(--ink);
   transition: background-color 180ms ease, color 180ms ease;
+}
+
+/* Dividers shared by the home sections. Adjacent sections share one boundary. */
+.app-shell main > section {
+  border-bottom: 1px solid var(--line);
+}
+
+.app-shell main > section:first-child {
+  border-top: 1px solid var(--line);
+}
+
+/* Vertical rails frame the public page like a document layout.
+   They start below the hero section (hero uses negative margin to break out of
+   the container, so we offset the rail top by the hero's visual height). */
+.app-shell > main {
+  position: relative;
+  /* Hero is min-height: 100svh + 32px bottom margin */
+  --rail-top: calc(100svh + 32px);
+}
+
+.app-shell > main::before,
+.app-shell > main::after {
+  position: absolute;
+  /* z-index: 0 so rails never cover overflow elements like cards */
+  z-index: 0;
+  top: var(--rail-top);
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+  content: '';
+  pointer-events: none;
+}
+
+.app-shell > main::before {
+  left: 0;
+}
+
+.app-shell > main::after {
+  right: 0;
+}
+
+@media (max-width: 760px) {
+  .app-shell > main {
+    /* Hero on mobile is also 100svh + 32px margin */
+    --rail-top: calc(100svh + 32px);
+  }
 }
 
 /* ===== Navbar — lihat Navbar.vue (Tailwind) ===== */
