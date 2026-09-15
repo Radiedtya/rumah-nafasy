@@ -20,6 +20,7 @@ const steps = [
 
 <template>
   <section id="cara-kerja" aria-labelledby="cara-kerja-heading" class="py-20 md:py-28">
+    <div class="w-full max-w-[1200px] mx-auto">
     <div class="text-center mb-14">
       <p class="text-[var(--accent)] font-semibold tracking-widest text-xs uppercase mb-3">Proses Konsultasi</p>
       <h2 id="cara-kerja-heading" class="font-display text-3xl md:text-4xl font-semibold text-[var(--ink)] leading-tight">
@@ -63,6 +64,7 @@ const steps = [
           aria-hidden="true"
         />
       </div>
+    </div>
     </div>
   </section>
 </template>

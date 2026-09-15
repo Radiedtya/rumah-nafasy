@@ -1,5 +1,5 @@
 <template>
-  <section class="stats-section w-screen border-y border-[var(--line)]" aria-label="Statistik Rumah Natasy">
+  <section class="stats-section w-screen" aria-label="Statistik Rumah Natasy">
     <div class="mx-auto grid w-full max-w-[1200px] grid-cols-1 divide-y divide-[var(--line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
 
       <!-- Item 1 -->

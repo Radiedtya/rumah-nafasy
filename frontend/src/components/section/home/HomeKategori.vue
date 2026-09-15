@@ -1,91 +1,74 @@
 <template>
-  <section id="kategori" aria-labelledby="kategori-heading" class="py-20 md:py-28">
-    <div class="text-center mb-12">
-      <p class="text-[var(--accent)] font-semibold tracking-widest text-xs uppercase mb-3">Layanan Konsultasi</p>
-      <h2 id="kategori-heading" class="font-display text-3xl md:text-4xl font-semibold text-[var(--ink)] leading-tight">
-        Konsultasi untuk Hampir Semua Kondisi
-      </h2>
-      <p class="mt-4 text-[var(--copy)] text-base max-w-lg mx-auto leading-relaxed">
-        Dari kecemasan sehari-hari hingga kondisi klinis—kami punya psikolog yang tepat untuk Anda.
-      </p>
+  <section id="kategori" aria-labelledby="kategori-heading" class="category-section">
+    <div class="w-full max-w-[1200px] mx-auto">
+    <div class="category-heading">
+      <h2 id="kategori-heading">Temukan dukungan untuk setiap kebutuhan.</h2>
+
+      <div class="category-tabs" role="tablist" aria-label="Filter kategori layanan">
+        <button
+          v-for="tab in tabs"
+          :key="tab"
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === tab"
+          :class="{ active: activeTab === tab }"
+          @click="activeTab = tab"
+        >
+          {{ tab }}
+        </button>
+      </div>
     </div>
 
-    <!-- Filter tabs -->
-    <div class="flex items-center justify-center gap-2 flex-wrap mb-10" role="tablist" aria-label="Filter kategori layanan">
-      <button
-        v-for="tab in tabs"
-        :key="tab"
-        type="button"
-        role="tab"
-        :aria-selected="activeTab === tab"
-        @click="activeTab = tab"
-        class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border"
-        :class="activeTab === tab
-          ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-          : 'bg-transparent text-[var(--copy)] border-[var(--line)] hover:border-[var(--accent)]/50'"
-      >
-        {{ tab }}
-      </button>
-    </div>
-
-    <!-- Grid kategori -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="category-grid">
       <a
         v-for="item in filteredCategories"
         :key="item.title"
         href="#"
-        class="group flex items-center justify-between gap-4 p-5 rounded-2xl border border-[var(--line)] bg-[var(--background)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/3 transition-all duration-200"
+        class="category-card"
         :aria-label="`Konsultasi ${item.title}, ${item.price}`"
       >
-        <div class="flex items-center gap-4 min-w-0">
-          <div class="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center text-2xl" :style="{ background: item.iconBg }">
-            {{ item.emoji }}
-          </div>
-          <div class="min-w-0">
-            <h3 class="font-semibold text-[var(--ink)] text-sm leading-snug">{{ item.title }}</h3>
-            <p class="text-[var(--muted)] text-xs mt-0.5">{{ item.price }}</p>
-          </div>
+        <div class="category-copy">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.price }}</p>
         </div>
-        <ArrowUpRightIcon
-          class="w-4 h-4 text-[var(--muted)] shrink-0 group-hover:text-[var(--accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
-          aria-hidden="true"
+        <img
+          :src="item.image"
+          :alt="`Placeholder ilustrasi ${item.title}`"
+          class="category-image"
+          :class="{ 'category-image-depression': item.title === 'Depresi' }"
         />
+        <ArrowRightIcon class="category-arrow" aria-hidden="true" />
       </a>
     </div>
 
-    <!-- Lihat semua -->
-    <div class="mt-10 text-center">
-      <a
-        href="#"
-        class="inline-flex items-center gap-1.5 text-[var(--accent)] font-semibold text-sm hover:opacity-70 transition-opacity group"
-      >
-        Lihat semua {{ totalCount }} layanan
-        <ArrowUpRightIcon class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" aria-hidden="true" />
-      </a>
+    <a href="#" class="category-cta">
+      Lihat semua {{ totalCount }} layanan
+      <ArrowRightIcon aria-hidden="true" />
+    </a>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ArrowUpRightIcon } from '@heroicons/vue/24/outline'
+import { ArrowRightIcon } from '@heroicons/vue/24/outline'
 
-const tabs = ['Populer', 'Kecemasan', 'Hubungan', 'Diri Sendiri', 'Kondisi Klinis']
+const tabs = ['Populer', 'Kecemasan', 'Hubungan', 'Diri sendiri', 'Kondisi klinis']
 const activeTab = ref('Populer')
 
 const allCategories = [
-  { title: 'Kecemasan & Panik', price: 'Mulai Rp 120.000/sesi', emoji: '😰', tag: 'Kecemasan', iconBg: '#fef3c7' },
-  { title: 'Depresi', price: 'Mulai Rp 130.000/sesi', emoji: '🌧️', tag: 'Kondisi Klinis', iconBg: '#e0f2fe' },
-  { title: 'Trauma & PTSD', price: 'Mulai Rp 150.000/sesi', emoji: '💔', tag: 'Kondisi Klinis', iconBg: '#ffe4e6' },
-  { title: 'Hubungan & Pasangan', price: 'Mulai Rp 140.000/sesi', emoji: '💑', tag: 'Hubungan', iconBg: '#fce7f3' },
-  { title: 'Masalah Keluarga', price: 'Mulai Rp 130.000/sesi', emoji: '🏠', tag: 'Hubungan', iconBg: '#f0fdf4' },
-  { title: 'Self-Esteem & Kepercayaan Diri', price: 'Mulai Rp 110.000/sesi', emoji: '🌱', tag: 'Diri Sendiri', iconBg: '#f0fdf4' },
-  { title: 'Burnout & Stres Kerja', price: 'Mulai Rp 120.000/sesi', emoji: '🔥', tag: 'Populer', iconBg: '#fff7ed' },
-  { title: 'Grief & Kehilangan', price: 'Mulai Rp 130.000/sesi', emoji: '🕊️', tag: 'Kondisi Klinis', iconBg: '#f1f5f9' },
-  { title: 'Masalah Tidur', price: 'Mulai Rp 110.000/sesi', emoji: '😴', tag: 'Populer', iconBg: '#ede9fe' },
-  { title: 'Fobia', price: 'Mulai Rp 120.000/sesi', emoji: '😨', tag: 'Kecemasan', iconBg: '#fef9c3' },
-  { title: 'Kesehatan Mental Remaja', price: 'Mulai Rp 120.000/sesi', emoji: '🧒', tag: 'Populer', iconBg: '#dcfce7' },
-  { title: 'Pengembangan Diri', price: 'Mulai Rp 100.000/sesi', emoji: '✨', tag: 'Diri Sendiri', iconBg: '#fdf4ff' },
+  { title: 'Kecemasan & Panik', price: 'Mulai Rp 120.000/sesi', tag: 'Kecemasan', image: '/images/category/panik.png' },
+  { title: 'Depresi', price: 'Mulai Rp 130.000/sesi', tag: 'Kondisi klinis', image: '/images/category/depresibaru.png' },
+  { title: 'Trauma & PTSD', price: 'Mulai Rp 150.000/sesi', tag: 'Kondisi klinis', image: '/images/category/ptsd.png' },
+  { title: 'Hubungan & Pasangan', price: 'Mulai Rp 140.000/sesi', tag: 'Hubungan', image: 'https://placehold.co/800x420/f7f1f5/687384?text=Ilustrasi+Hubungan' },
+  { title: 'Masalah Keluarga', price: 'Mulai Rp 130.000/sesi', tag: 'Hubungan', image: 'https://placehold.co/800x420/f1f6f2/687384?text=Ilustrasi+Keluarga' },
+  { title: 'Self-Esteem & Kepercayaan Diri', price: 'Mulai Rp 110.000/sesi', tag: 'Diri sendiri', image: 'https://placehold.co/800x420/f3f4ed/687384?text=Ilustrasi+Kepercayaan+Diri' },
+  { title: 'Burnout & Stres Kerja', price: 'Mulai Rp 120.000/sesi', tag: 'Populer', image: '/images/category/stress.png' },
+  { title: 'Grief & Kehilangan', price: 'Mulai Rp 130.000/sesi', tag: 'Kondisi klinis', image: 'https://placehold.co/800x420/f1f3f5/687384?text=Ilustrasi+Kehilangan' },
+  { title: 'Masalah Tidur', price: 'Mulai Rp 110.000/sesi', tag: 'Populer', image: '/images/category/kurangtidur.png' },
+  { title: 'Fobia', price: 'Mulai Rp 120.000/sesi', tag: 'Kecemasan', image: 'https://placehold.co/800x420/f7f6e8/687384?text=Ilustrasi+Fobia' },
+  { title: 'Kesehatan Mental Remaja', price: 'Mulai Rp 120.000/sesi', tag: 'Populer', image: '/images/category/mentalremaja.png' },
+  { title: 'Pengembangan Diri', price: 'Mulai Rp 100.000/sesi', tag: 'Diri sendiri', image: 'https://placehold.co/800x420/f7f1f8/687384?text=Ilustrasi+Pengembangan+Diri' },
 ]
 
 const filteredCategories = computed(() => {
@@ -95,3 +78,198 @@ const filteredCategories = computed(() => {
 
 const totalCount = allCategories.length
 </script>
+
+<style scoped>
+.category-section {
+  padding: 92px 0 96px;
+  color: var(--text);
+}
+
+.category-heading {
+  text-align: center;
+}
+
+.category-heading h2 {
+  max-width: 760px;
+  margin: 0 auto;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.065em;
+  line-height: 1.04;
+}
+
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 34px;
+}
+
+.category-tabs button {
+  min-height: 43px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+
+.category-tabs button:hover,
+.category-tabs button.active {
+  border-color: #9b72ff;
+  background: #f1eaff;
+  color: #7140dc;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 36px;
+}
+
+.category-card {
+  position: relative;
+  display: flex;
+  min-height: 178px;
+  align-items: center;
+  overflow: hidden;
+  padding: 26px 50% 26px 20px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--line) 24%, var(--surface));
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.category-card:hover {
+  background: color-mix(in srgb, var(--line) 34%, var(--surface));
+  transform: translateY(-2px);
+}
+
+.category-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.category-copy h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.category-copy p {
+  margin: 8px 0 0;
+  color: var(--copy);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.category-image {
+  position: absolute;
+  right: 24px;
+  bottom: 0;
+  width: 53%;
+  height: 100%;
+  object-fit: contain;
+  object-position: right bottom;
+  pointer-events: none;
+}
+
+.category-image-depression {
+  transform: scale(1.35);
+  transform-origin: right bottom;
+}
+
+.category-arrow {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: 16px;
+  width: 21px;
+  height: 21px;
+  color: var(--muted);
+  transform: translateY(-50%);
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.category-card:hover .category-arrow {
+  color: var(--ink);
+  transform: translate(2px, -50%);
+}
+
+.category-cta {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  margin: 48px auto 0;
+  color: #7140dc;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.category-cta svg {
+  width: 21px;
+  height: 21px;
+  transition: transform 180ms ease;
+}
+
+.category-cta:hover svg {
+  transform: translateX(3px);
+}
+
+@media (max-width: 900px) {
+  .category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .category-section {
+    padding: 68px 0 76px;
+  }
+
+  .category-heading h2 {
+    font-size: 2rem;
+  }
+
+  .category-tabs {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-tabs button {
+    flex: 0 0 auto;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .category-card {
+    min-height: 156px;
+    padding-left: 18px;
+  }
+}
+</style>
