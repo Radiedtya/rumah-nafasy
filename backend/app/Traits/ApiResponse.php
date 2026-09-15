@@ -26,4 +26,28 @@ trait ApiResponse
 
         return response()->json($response, $code);
     }
+
+    protected function paginateResponse($paginator, string $message = 'Success', $resourceClass = null)
+    {
+        $items = $paginator->items();
+
+        if ($resourceClass) {
+            $items = $resourceClass::collection(collect($items))->resolve();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $items,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+                'has_more' => $paginator->hasMorePages(),
+            ],
+        ]);
+    }
 }
