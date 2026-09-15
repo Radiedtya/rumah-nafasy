@@ -1,38 +1,60 @@
 <script setup lang="ts">
 import HomeStats from '../components/section/home/HomeStats.vue'
+import HomeHowItWorks from '../components/section/home/HomeHowItWorks.vue'
+import HomePsikolog from '../components/section/home/HomePsikolog.vue'
+import HomeKategori from '../components/section/home/HomeKategori.vue'
+import HomeKenapa from '../components/section/home/HomeKenapa.vue'
+import HomeTestimoni from '../components/section/home/HomeTestimoni.vue'
+import HomeFaq from '../components/section/home/HomeFaq.vue'
 </script>
 
 <template>
-    <main class="home-page">
-        <section class="hero-section" id="mulai">
-            <div class="hero-copy">
-                <p class="eyebrow">OurRitual</p>
-                <h1>Perkuat Hubungan Anda<br class="desktop-break" /> dengan Dukungan Personal</h1>
-                <p class="hero-description">
-                    OurRitual adalah pendekatan baru untuk terapi pasangan, memadukan bimbingan ahli dengan
-                    pengalaman digital personal yang mendukung pertumbuhan dan kedekatan berkelanjutan
-                </p>
-                <a class="button button-hero" href="#cara-kerja">Mulai Sekarang</a>
-            </div>
+  <!-- ===== HERO ===== -->
+  <section class="hero-section" id="mulai" aria-labelledby="hero-heading">
+    <div class="hero-media" aria-hidden="true">
+      <img src="/images/bg/image.png" alt="" />
+    </div>
+    <div class="hero-copy">
+      <h1 id="hero-heading">
+        Mental Sehat,<br class="desktop-break" />
+        Hidup Kuat
+      </h1>
+    </div>
 
-            <div class="hero-image-wrap">
-                <img
-                    class="hero-image"
-                      src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1800&q=85"
-                    alt="Pasangan tersenyum bersama di luar ruangan"
-                />
-                <div class="feature-list" aria-label="Keunggulan OurRitual">
-                    <span class="feature-pill"><UserGroupIcon :size="19" aria-hidden="true" />300+ Ahli Terverifikasi</span>
-                    <span class="feature-pill"><CalendarDaysIcon :size="19" aria-hidden="true" />Paket Fleksibel</span>
-                    <span class="feature-pill"><DevicePhoneMobileIcon :size="19" aria-hidden="true" />Alat Digital Personal</span>
-                </div>
-            </div>
-        </section>
+    <div class="hero-side-copy">
+      <p class="hero-description">
+        Temui psikolog berlisensi secara aman, mudah, dan fleksibel dari rumah.
+      </p>
+      <div class="hero-actions">
+        <a class="button button-hero" href="#cara-kerja">Mulai Konsultasi <span aria-hidden="true">→</span></a>
+        <a
+          href="#ahli"
+          class="hero-secondary-button"
+        >
+          Lihat Psikolog <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
 
-        <HomeStats />
+  <!-- ===== STATS ===== -->
+  <HomeStats />
 
-        <section class="home-followup" id="cara-kerja" aria-label="Informasi OurRitual">
-            <span>Dukungan yang dirancang untuk hubungan yang sedang Anda bangun.</span>
-        </section>
-    </main>
+  <!-- ===== CARA KERJA ===== -->
+  <HomeHowItWorks />
+
+  <!-- ===== PSIKOLOG PILIHAN ===== -->
+  <HomePsikolog />
+
+  <!-- ===== KATEGORI LAYANAN ===== -->
+  <HomeKategori />
+
+  <!-- ===== KENAPA RUMAH NATASY ===== -->
+  <HomeKenapa />
+
+  <!-- ===== TESTIMONI ===== -->
+  <HomeTestimoni />
+
+  <!-- ===== FAQ ===== -->
+  <HomeFaq />
 </template>
