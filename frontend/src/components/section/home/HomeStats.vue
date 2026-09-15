@@ -1,118 +1,50 @@
-<script setup lang="ts">
-import {
-  CurrencyDollarIcon,
-  HeartIcon,
-  HandThumbUpIcon,
-} from '@heroicons/vue/24/outline'
-
-const statistics = [
-  {
-    title: 'Lebih dari $50 juta dihemat pasien',
-    description: 'Tanpa biaya tambahan, tanpa tagihan tak terduga, tanpa masalah.',
-    icon: CurrencyDollarIcon,
-  },
-  {
-    title: '95% kepuasan pasien',
-    description: 'Perawatan nyata tanpa birokrasi. Lebih dari 1 juta pasien setuju.',
-    icon: HandThumbUpIcon,
-  },
-  {
-    title: '10 ribu+ penyedia bersertifikat',
-    description: 'Apa pun kebutuhan Anda, ada dokter yang siap membantu.',
-    icon: HeartIcon,
-  },
-]
-</script>
-
 <template>
-  <section class="stats-bar" aria-label="Statistik OurRitual">
-    <article v-for="statistic in statistics" :key="statistic.title" class="statistic-item">
-      <div class="statistic-title">
-        <component :is="statistic.icon" aria-hidden="true" />
-        <strong>{{ statistic.title }}</strong>
+  <section class="stats-section w-screen" aria-label="Statistik Rumah Natasy">
+    <div class="mx-auto grid w-full max-w-[1200px] grid-cols-1 divide-y divide-[var(--line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+
+      <!-- Item 1 -->
+      <div class="flex flex-col items-center px-8 py-10 text-center">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <CurrencyDollarIcon class="w-5 h-5 text-[var(--text)] shrink-0" aria-hidden="true" />
+          <strong class="text-lg font-semibold tracking-tight text-[var(--text)]">Rp 2M+ Dihemat</strong>
+        </div>
+        <p class="text-[var(--muted)] text-sm leading-normal max-w-[200px]">
+          Klien kami hemat rata-rata 60% dibanding klinik konvensional.
+        </p>
       </div>
-      <p>{{ statistic.description }}</p>
-    </article>
+
+      <!-- Item 2 -->
+      <div class="flex flex-col items-center px-8 py-10 text-center">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <HandThumbUpIcon class="w-5 h-5 text-[var(--text)] shrink-0" aria-hidden="true" />
+          <strong class="text-lg font-semibold tracking-tight text-[var(--text)]">97% Kepuasan</strong>
+        </div>
+        <p class="text-[var(--muted)] text-sm leading-normal max-w-[200px]">
+          Lebih dari 10.000 sesi sukses dengan rating rata-rata 4.9/5.
+        </p>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="flex flex-col items-center px-8 py-10 text-center">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <HeartIcon class="w-5 h-5 text-[var(--text)] shrink-0" aria-hidden="true" />
+          <strong class="text-lg font-semibold tracking-tight text-[var(--text)]">150+ Psikolog</strong>
+        </div>
+        <p class="text-[var(--muted)] text-sm leading-normal max-w-[200px]">
+          Semua tersertifikasi SIP dan anggota aktif HIMPsi Indonesia.
+        </p>
+      </div>
+
+    </div>
   </section>
 </template>
 
+<script setup lang="ts">
+import { CurrencyDollarIcon, HeartIcon, HandThumbUpIcon } from '@heroicons/vue/24/outline'
+</script>
+
 <style scoped>
-.stats-bar {
-  display: grid;
-  width: 100vw;
-  min-height: 203px;
-  margin-left: calc((100% - 100vw) / 2);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: center;
-  border-top: 1px solid var(--line);
-  background: transparent;
-  color: var(--text);
-}
-
-.statistic-item {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 28px;
-  text-align: center;
-}
-
-.statistic-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 20px;
-  line-height: 1.25;
-}
-
-.statistic-title svg {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  stroke-width: 2;
-}
-
-.statistic-title strong {
-  font-weight: 700;
-}
-
-.statistic-item p {
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 17px;
-  line-height: 1.4;
-}
-
-:global(:root[data-theme='dark']) .stats-bar {
-  background: transparent;
-}
-
-@media (max-width: 760px) {
-  .stats-bar {
-    width: 100%;
-    margin-left: 0;
-    grid-template-columns: 1fr;
-  }
-
-  .statistic-item {
-    padding: 26px 16px;
-  }
-
-  .statistic-title {
-    gap: 6px;
-    font-size: 15px;
-  }
-
-  .statistic-title svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .statistic-item p {
-    margin-top: 8px;
-    font-size: 13px;
-  }
+.stats-section {
+  margin-left: calc(50% - 50vw);
 }
 </style>
