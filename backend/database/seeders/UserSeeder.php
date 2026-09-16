@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
         // ==================== ADMIN ====================
 
         $admin = User::firstOrCreate(
-            ['email' => 'admin@rumahnatasy.id'],
+            ['email' => 'admin@rumahnafasy.id'],
             [
                 'name' => 'Admin Rumah Natasy',
                 'password' => Hash::make('password'),
@@ -30,27 +30,27 @@ class UserSeeder extends Seeder
         $psikologData = [
             [
                 'name' => 'dr. Andi Pratama, M.Psi',
-                'email' => 'andi@rumahnatasy.id',
+                'email' => 'andi@rumahnafasy.id',
                 'phone' => '081234567891',
             ],
             [
                 'name' => 'dr. Sari Dewi, M.Psi',
-                'email' => 'sari@rumahnatasy.id',
+                'email' => 'sari@rumahnafasy.id',
                 'phone' => '081234567892',
             ],
             [
                 'name' => 'dr. Budi Santoso, M.Psi',
-                'email' => 'budi@rumahnatasy.id',
+                'email' => 'budi@rumahnafasy.id',
                 'phone' => '081234567893',
             ],
             [
                 'name' => 'dr. Maya Sari, M.Psi',
-                'email' => 'maya@rumahnatasy.id',
+                'email' => 'maya@rumahnafasy.id',
                 'phone' => '081234567894',
             ],
             [
                 'name' => 'dr. Doni Hartanto, M.Psi',
-                'email' => 'doni@rumahnatasy.id',
+                'email' => 'doni@rumahnafasy.id',
                 'phone' => '081234567895',
             ],
         ];
