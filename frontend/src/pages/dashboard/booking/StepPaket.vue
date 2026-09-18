@@ -73,7 +73,7 @@ async function proceedToPayment() {
           v-for="cat in store.categories"
           :key="cat.id"
           type="button"
-          class="rounded-xl border p-4 text-left transition-all"
+          class="rounded-xl border p-4 text-left transition-colors"
           :class="
             store.selectedCategory?.id === cat.id
               ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
@@ -97,7 +97,7 @@ async function proceedToPayment() {
           v-for="dur in store.durations"
           :key="dur.id"
           type="button"
-          class="rounded-xl border p-4 text-left transition-all"
+          class="rounded-xl border p-4 text-left transition-colors"
           :class="
             store.selectedDuration?.id === dur.id
               ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
@@ -117,7 +117,7 @@ async function proceedToPayment() {
       <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
         <button
           type="button"
-          class="flex items-center gap-3 rounded-xl border p-4 text-left transition-all"
+          class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
           :class="
             store.consultationType === 'video'
               ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
@@ -133,7 +133,7 @@ async function proceedToPayment() {
         </button>
         <button
           type="button"
-          class="flex items-center gap-3 rounded-xl border p-4 text-left transition-all"
+          class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
           :class="
             store.consultationType === 'chat'
               ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'

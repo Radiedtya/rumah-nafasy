@@ -189,11 +189,20 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* clip (bukan hidden) — tidak membuat scroll container baru; fallback hidden utk browser lama */
   overflow-x: hidden;
+  overflow-x: clip;
   /* Firefox custom scrollbar */
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
+}
+
+/* Smooth scroll HANYA untuk halaman publik (anchor nav #mulai dst).
+   Dashboard & booking scroll instan — smooth interpolation terasa "patah" saat wheel. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.app-shell) {
+    scroll-behavior: smooth;
+  }
 }
 
 /* Webkit custom scrollbar — 6px, tipis tapi mudah dijangkau */
@@ -218,7 +227,10 @@ body {
   font-weight: 300;
   background: var(--background);
   transition: background-color 180ms ease, color 180ms ease;
+  /* clip (bukan hidden) — hidden memaksa overflow-y jadi auto sehingga body
+     menjadi scroll container kedua (sumber jank wheel & bug sticky). */
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Paragraf dan teks deskripsi — selalu light */
