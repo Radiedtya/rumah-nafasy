@@ -65,11 +65,12 @@ const currentLabel = computed(() => {
   const match = [
     { href: '/dashboard/sesi', label: 'Sesi Saya' },
     { href: '/dashboard/psikolog', label: 'Cari Psikolog' },
+    { prefix: '/dashboard/booking/', label: 'Booking Konsultasi' },
     { href: '/dashboard/profil', label: 'Profil' },
     { href: '/dashboard/jadwal', label: 'Jadwal Praktek' },
     { href: '/dashboard/konsultasi', label: 'Konsultasi & Catatan' },
     { href: '/dashboard', label: 'Overview' },
-  ].find((n) => route.path === n.href)
+  ].find((n: any) => 'prefix' in n ? route.path.startsWith(n.prefix) : route.path === n.href)
   return match?.label ?? 'Overview'
 })
 

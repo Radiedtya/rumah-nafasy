@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { ArrowRightIcon } from '@heroicons/vue/20/solid'
 import { useTheme } from '../composables/theme'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const { resolvedMode, setMode } = useTheme()
 
@@ -47,7 +48,9 @@ async function handleLogin() {
   errors.value = {}
   try {
     await auth.login(email.value.trim(), password.value)
-    router.push('/dashboard')
+    // Kembali ke halaman yang dituju sebelum diarahkan ke login (mis. wizard booking)
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
+    router.push(redirect)
   } catch (err: any) {
     if (err.errors) {
       errors.value = {
