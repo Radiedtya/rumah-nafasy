@@ -131,14 +131,56 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function updateProfile(data: { name?: string; phone?: string; email?: string }) {
+  async function updateProfile(data: { name?: string; phone?: string; avatar?: File }) {
+    if (data.avatar) {
+      // Step 1: upload avatar dulu ke dedicated endpoint
+      await uploadAvatar(data.avatar)
+      // Step 2: update name/phone jika ada
+      if (data.name !== undefined || data.phone !== undefined) {
+        const res = await apiFetch<UserProfile>('auth/profile', {
+          method: 'PUT',
+          body: JSON.stringify({ name: data.name, phone: data.phone }),
+        })
+        user.value = res.data
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(res.data))
+        }
+      }
+      return user.value!
+    }
+
+    // Tanpa file — JSON saja
     const res = await apiFetch<UserProfile>('auth/profile', {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ name: data.name, phone: data.phone }),
     })
-    user.value = { ...user.value, ...res.data }
+    user.value = res.data
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(user.value))
+      localStorage.setItem('user', JSON.stringify(res.data))
+    }
+    return res.data
+  }
+
+  async function uploadAvatar(file: File) {
+    const form = new FormData()
+    form.append('avatar', file)
+    // Dedicated POST endpoint — tidak perlu _method spoofing
+    const res = await apiFetch<UserProfile>('auth/profile/avatar', {
+      method: 'POST',
+      body: form,
+    })
+    user.value = res.data
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(res.data))
+    }
+    return res.data
+  }
+
+  async function deleteAvatar() {
+    const res = await apiFetch<UserProfile>('auth/profile/avatar', { method: 'DELETE' })
+    user.value = res.data
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(res.data))
     }
     return res.data
   }
@@ -156,6 +198,8 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     fetchMe,
     updateProfile,
+    uploadAvatar,
+    deleteAvatar,
     setSession,
     clearSession,
   }

@@ -26,6 +26,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);
             Route::get('/me', [ProfileController::class, 'me']);
             Route::put('/profile', [ProfileController::class, 'update']);
+            Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
+            Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
         });
     });
 
