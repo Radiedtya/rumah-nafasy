@@ -10,20 +10,26 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // ==================== ADMIN ====================
+        // ==================== OWNER / SUPER ADMIN ====================
 
         $admin = User::firstOrCreate(
-            ['email' => 'admin@rumahnafasy.id'],
+            ['email' => 'nairha@rumahnatasy.id'],
             [
-                'name' => 'Admin Rumah Natasy',
-                'password' => Hash::make('password'),
-                'phone' => '081234567890',
+                'name' => 'Nairha',
+                'password' => Hash::make('nairha@rumahnatasy2024!'),
+                'phone' => '+6281234567890',
                 'email_verified_at' => now(),
                 'phone_verified_at' => now(),
                 'is_active' => true,
             ]
         );
-        $admin->assignRole('admin');
+        $admin->syncRoles(['admin']);
+
+        // Hapus admin lama jika ada (migrasi dari dummy)
+        User::where('email', 'admin@rumahnatasy.id')
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', '!=', 'admin'))
+            ->where('name', 'Admin Rumah Natasy')
+            ->delete();
 
         // ==================== PSIKOLOG ====================
 
@@ -67,7 +73,7 @@ class UserSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
-            $psikolog->assignRole('psikolog');
+            $psikolog->syncRoles(['psikolog']);
         }
 
         // ==================== PASIEN ====================
@@ -92,7 +98,7 @@ class UserSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
-            $pasien->assignRole('pasien');
+            $pasien->syncRoles(['pasien']);
         }
     }
 }
