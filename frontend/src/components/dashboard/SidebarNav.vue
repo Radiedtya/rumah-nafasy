@@ -8,6 +8,9 @@ import {
   ClockIcon,
   ClipboardDocumentListIcon,
   UserCircleIcon,
+  UsersIcon,
+  CalendarIcon,
+  DocumentTextIcon,
 } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '../../stores/auth'
 import { computed, type Component } from 'vue'
@@ -26,21 +29,33 @@ interface NavItem {
   icon: Component
 }
 
+const adminNav: NavItem[] = [
+  { label: 'Overview',           href: '/dashboard',               icon: Squares2X2Icon },
+  { label: 'Kelola Psikolog',    href: '/dashboard/pengguna',      icon: UsersIcon },
+  { label: 'Semua Jadwal',       href: '/dashboard/semua-jadwal',  icon: CalendarIcon },
+  { label: 'Semua Konsultasi',   href: '/dashboard/semua-konsultasi', icon: DocumentTextIcon },
+  { label: 'Profil',             href: '/dashboard/profil',        icon: UserCircleIcon },
+]
+
 const pasienNav: NavItem[] = [
-  { label: 'Overview', href: '/dashboard', icon: Squares2X2Icon },
-  { label: 'Sesi Saya', href: '/dashboard/sesi', icon: CalendarDaysIcon },
+  { label: 'Overview',     href: '/dashboard',          icon: Squares2X2Icon },
+  { label: 'Sesi Saya',    href: '/dashboard/sesi',     icon: CalendarDaysIcon },
   { label: 'Cari Psikolog', href: '/dashboard/psikolog', icon: UserGroupIcon },
-  { label: 'Profil', href: '/dashboard/profil', icon: UserCircleIcon },
+  { label: 'Profil',       href: '/dashboard/profil',   icon: UserCircleIcon },
 ]
 
 const psikologNav: NavItem[] = [
-  { label: 'Overview', href: '/dashboard', icon: Squares2X2Icon },
-  { label: 'Jadwal Praktek', href: '/dashboard/jadwal', icon: ClockIcon },
-  { label: 'Konsultasi & Catatan', href: '/dashboard/konsultasi', icon: ClipboardDocumentListIcon },
-  { label: 'Profil', href: '/dashboard/profil', icon: UserCircleIcon },
+  { label: 'Overview',              href: '/dashboard',              icon: Squares2X2Icon },
+  { label: 'Jadwal Praktek',        href: '/dashboard/jadwal',       icon: ClockIcon },
+  { label: 'Konsultasi & Catatan',  href: '/dashboard/konsultasi',   icon: ClipboardDocumentListIcon },
+  { label: 'Profil',                href: '/dashboard/profil',       icon: UserCircleIcon },
 ]
 
-const navItems = computed<NavItem[]>(() => (auth.isPsikolog ? psikologNav : pasienNav))
+const navItems = computed<NavItem[]>(() => {
+  if (auth.isAdmin) return adminNav
+  if (auth.isPsikolog) return psikologNav
+  return pasienNav
+})
 </script>
 
 <template>
