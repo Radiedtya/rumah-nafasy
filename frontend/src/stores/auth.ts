@@ -87,8 +87,9 @@ export const useAuthStore = defineStore('auth', () => {
     email: string
     password: string
     password_confirmation: string
-    phone: string
+    phone?: string
     role?: 'pasien' | 'psikolog'
+    turnstile_token?: string
   }) {
     isLoading.value = true
     try {
