@@ -2,9 +2,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useTheme } from '../composables/theme'
 
 const router = useRouter()
 const auth = useAuthStore()
+const { resolvedMode, setMode } = useTheme()
 
 // ── Form fields ───────────────────────────────────────────────────────────────
 const name = ref('')
@@ -12,7 +14,6 @@ const email = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
 const showPassword = ref(false)
-
 // ── Errors per-field + form-level ─────────────────────────────────────────────
 const errors = ref<{
   name?: string
@@ -211,33 +212,40 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white text-neutral-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <RouterLink to="/" class="inline-flex items-center gap-2 text-neutral-900 font-extrabold text-xl tracking-tight no-underline mb-2">
-        <img src="/icon.svg" alt="" aria-hidden="true" class="w-7 h-7" />
-        Rumah Natasy
-      </RouterLink>
-      <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 leading-tight mt-4">
-        Buat akun baru
-      </h2>
-      <p class="mt-2 text-sm text-neutral-500">Bergabung dan mulai perjalanan kesehatan mental Anda.</p>
-    </div>
+  <div :data-theme="resolvedMode" class="reg-page">
+    <!-- Theme toggle -->
+    <button
+      type="button"
+      class="reg-theme-toggle"
+      :aria-label="resolvedMode === 'dark' ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'"
+      @click="setMode(resolvedMode === 'dark' ? 'light' : 'dark')"
+    >
+      <svg v-if="resolvedMode === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="reg-inner">
+      <div class="reg-header">
+        <RouterLink to="/" class="reg-brand" aria-label="Kembali ke beranda Rumah Natasy">
+          <img src="/icon.svg" alt="" aria-hidden="true" />
+          Rumah Natasy
+        </RouterLink>
+        <h2 class="reg-heading">Buat akun baru</h2>
+        <p class="reg-subheading">Bergabung dan mulai perjalanan kesehatan mental Anda.</p>
+      </div>
 
       <!-- Error form-level -->
-      <div v-if="errors.form" class="mb-4 p-3 bg-red-50 text-red-700 text-xs rounded-xl font-medium border border-red-200" role="alert">
+      <div v-if="errors.form" class="reg-error-box" role="alert">
         {{ errors.form }}
       </div>
 
-      <!-- Google (placeholder — belum terhubung) -->
-      <button
-        type="button"
-        disabled
-        aria-label="Daftar dengan Google (segera hadir)"
-        class="w-full flex items-center justify-center gap-3 py-3 px-4 border border-neutral-300 rounded-xl text-sm font-medium text-neutral-400 bg-white cursor-not-allowed opacity-55 shadow-xs mb-6"
-      >
-        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+      <!-- Google (placeholder) -->
+      <button type="button" disabled aria-label="Daftar dengan Google (segera hadir)" class="reg-google-btn">
+        <svg class="reg-google-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
@@ -247,87 +255,59 @@ async function handleRegister() {
       </button>
 
       <!-- Divider -->
-      <div class="relative mb-6">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-neutral-200"></div>
-        </div>
-        <div class="relative flex justify-center text-xs">
-          <span class="bg-white px-3 text-neutral-400 font-medium uppercase tracking-widest">Atau daftar dengan email</span>
-        </div>
-      </div>
+      <div class="reg-divider"><span>Atau daftar dengan email</span></div>
 
       <!-- Form -->
-      <form class="space-y-4" @submit.prevent="handleRegister" novalidate>
+      <form class="reg-form" @submit.prevent="handleRegister" novalidate>
 
         <!-- Nama -->
-        <div>
-          <label for="reg-name" class="block text-xs font-semibold text-neutral-900 mb-1.5">
-            Nama Lengkap
-          </label>
+        <div class="reg-field">
+          <label for="reg-name">Nama Lengkap</label>
           <input
             id="reg-name"
             v-model="name"
             type="text"
             autocomplete="name"
             placeholder="Contoh: Rina Wijaya"
-            :class="[
-              'w-full bg-white border rounded-xl px-3.5 py-2.5 text-sm text-neutral-900 outline-none transition-all shadow-2xs',
-              errors.name
-                ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-400'
-                : 'border-neutral-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
-            ]"
+            :class="{ 'is-error': errors.name }"
             @blur="errors.name = validateName(name) ?? undefined"
           />
-          <p v-if="errors.name" class="mt-1 text-xs text-red-600" role="alert">{{ errors.name }}</p>
+          <span v-if="errors.name" class="reg-field-error" role="alert">{{ errors.name }}</span>
         </div>
 
         <!-- Email -->
-        <div>
-          <label for="reg-email" class="block text-xs font-semibold text-neutral-900 mb-1.5">
-            Email
-          </label>
+        <div class="reg-field">
+          <label for="reg-email">Email</label>
           <input
             id="reg-email"
             v-model="email"
             type="email"
             autocomplete="email"
             placeholder="nama@email.com"
-            :class="[
-              'w-full bg-white border rounded-xl px-3.5 py-2.5 text-sm text-neutral-900 outline-none transition-all shadow-2xs',
-              errors.email
-                ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-400'
-                : 'border-neutral-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
-            ]"
+            :class="{ 'is-error': errors.email }"
             @blur="errors.email = validateEmail(email) ?? undefined"
           />
-          <p v-if="errors.email" class="mt-1 text-xs text-red-600" role="alert">{{ errors.email }}</p>
+          <span v-if="errors.email" class="reg-field-error" role="alert">{{ errors.email }}</span>
         </div>
 
         <!-- Password -->
-        <div>
-          <label for="reg-password" class="block text-xs font-semibold text-neutral-900 mb-1.5">
-            Password
-          </label>
-          <div class="relative">
+        <div class="reg-field">
+          <label for="reg-password">Password</label>
+          <div class="reg-password-wrap">
             <input
               id="reg-password"
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               autocomplete="new-password"
               placeholder="Min. 8 karakter, huruf kapital & angka"
-              :class="[
-                'w-full bg-white border rounded-xl px-3.5 py-2.5 pr-10 text-sm text-neutral-900 outline-none transition-all shadow-2xs',
-                errors.password
-                  ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-400'
-                  : 'border-neutral-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
-              ]"
+              :class="{ 'is-error': errors.password }"
               @blur="errors.password = validatePassword(password) ?? undefined"
             />
             <button
               type="button"
-              @click="showPassword = !showPassword"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600"
+              class="reg-eye-btn"
               :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+              @click="showPassword = !showPassword"
             >
               <svg v-if="!showPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -338,82 +318,316 @@ async function handleRegister() {
               </svg>
             </button>
           </div>
-          <!-- Password strength bar -->
-          <div v-if="password" class="mt-2 space-y-1">
-            <div class="flex gap-1">
+          <!-- Strength bar -->
+          <div v-if="password" class="reg-strength">
+            <div class="reg-strength-bars">
               <div
-                v-for="i in 4"
-                :key="i"
-                class="h-1 flex-1 rounded-full transition-colors duration-300"
-                :style="{ background: i <= passwordStrength(password) ? strengthColors[passwordStrength(password)] : '#e5e7eb' }"
-              ></div>
+                v-for="i in 4" :key="i"
+                class="reg-strength-bar"
+                :style="{ background: i <= passwordStrength(password) ? strengthColors[passwordStrength(password)] : 'var(--strength-empty)' }"
+              />
             </div>
-            <p class="text-xs" :style="{ color: strengthColors[passwordStrength(password)] }">
+            <span :style="{ color: strengthColors[passwordStrength(password)] }">
               {{ strengthLabels[passwordStrength(password)] }}
-            </p>
+            </span>
           </div>
-          <p v-if="errors.password" class="mt-1 text-xs text-red-600" role="alert">{{ errors.password }}</p>
+          <span v-if="errors.password" class="reg-field-error" role="alert">{{ errors.password }}</span>
         </div>
 
-        <!-- Konfirmasi Password -->
-        <div>
-          <label for="reg-confirm" class="block text-xs font-semibold text-neutral-900 mb-1.5">
-            Konfirmasi Password
-          </label>
+        <!-- Konfirmasi -->
+        <div class="reg-field">
+          <label for="reg-confirm">Konfirmasi Password</label>
           <input
             id="reg-confirm"
             v-model="passwordConfirmation"
             type="password"
             autocomplete="new-password"
             placeholder="Ulangi password Anda"
-            :class="[
-              'w-full bg-white border rounded-xl px-3.5 py-2.5 text-sm text-neutral-900 outline-none transition-all shadow-2xs',
-              errors.passwordConfirmation
-                ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-400'
-                : passwordConfirmation && !errors.passwordConfirmation
-                  ? 'border-green-400 focus:border-green-500 focus:ring-1 focus:ring-green-400'
-                  : 'border-neutral-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
-            ]"
+            :class="{
+              'is-error': errors.passwordConfirmation,
+              'is-ok': passwordConfirmation && !errors.passwordConfirmation && passwordConfirmation === password,
+            }"
             @blur="errors.passwordConfirmation = validatePasswordConfirmation(passwordConfirmation) ?? undefined"
           />
-          <p v-if="errors.passwordConfirmation" class="mt-1 text-xs text-red-600" role="alert">{{ errors.passwordConfirmation }}</p>
-          <p v-else-if="passwordConfirmation && passwordConfirmation === password" class="mt-1 text-xs text-green-600">
-            Password cocok ✓
-          </p>
+          <span v-if="errors.passwordConfirmation" class="reg-field-error" role="alert">{{ errors.passwordConfirmation }}</span>
+          <span v-else-if="passwordConfirmation && passwordConfirmation === password" class="reg-field-ok">Password cocok ✓</span>
         </div>
 
-        <!-- Cloudflare Turnstile -->
-        <div class="pt-1">
-          <p class="text-xs text-neutral-500 mb-2">Verifikasi keamanan</p>
-          <div ref="turnstileContainer" class="min-h-[65px]" aria-label="Widget verifikasi Cloudflare Turnstile"></div>
-          <p v-if="errors.turnstile" class="mt-1.5 text-xs text-red-600" role="alert">{{ errors.turnstile }}</p>
+        <!-- Turnstile -->
+        <div class="reg-turnstile-wrap">
+          <p class="reg-turnstile-label">Verifikasi keamanan</p>
+          <div ref="turnstileContainer" class="reg-turnstile-widget" aria-label="Widget verifikasi Cloudflare Turnstile"></div>
+          <span v-if="errors.turnstile" class="reg-field-error" role="alert">{{ errors.turnstile }}</span>
         </div>
 
         <!-- Terms -->
-        <p class="text-[11px] text-neutral-500 leading-relaxed pt-1">
+        <p class="reg-terms">
           Dengan mendaftar, saya menyetujui
-          <a href="#" class="text-neutral-700 underline">Ketentuan Layanan</a>,
-          <a href="#" class="text-neutral-700 underline">Kebijakan Privasi</a>, dan
-          <a href="#" class="text-neutral-700 underline">Kebijakan Cookie</a> Rumah Natasy.
+          <a href="#">Ketentuan Layanan</a>,
+          <a href="#">Kebijakan Privasi</a>, dan
+          <a href="#">Kebijakan Cookie</a> Rumah Natasy.
         </p>
 
         <!-- Submit -->
-        <button
-          type="submit"
-          class="w-full py-3 px-4 rounded-xl bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 active:scale-[0.99] transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="isLoading"
-        >
+        <button type="submit" class="reg-submit" :disabled="isLoading">
           {{ isLoading ? 'Mendaftarkan...' : 'Buat Akun' }}
         </button>
       </form>
 
-      <!-- Link Login -->
-      <div class="text-center pt-6 text-xs text-neutral-600">
+      <!-- Footer -->
+      <p class="reg-switch">
         Sudah punya akun?
-        <RouterLink to="/login" class="text-blue-600 font-medium hover:underline ml-1">
-          Masuk sekarang
-        </RouterLink>
-      </div>
+        <RouterLink to="/login">Masuk sekarang</RouterLink>
+      </p>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* ── Tokens ─────────────────────────────────────────────────────────── */
+.reg-page {
+  --bg: #ffffff;
+  --text: #111318;
+  --text-muted: #6b7280;
+  --border: #d1d5db;
+  --input-bg: #ffffff;
+  --input-text: #111318;
+  --input-ph: #9ca3af;
+  --focus-ring: rgb(37 99 235 / 15%);
+  --error: #dc2626;
+  --error-bg: #fef2f2;
+  --ok: #16a34a;
+  --btn-bg: #2563eb;
+  --btn-hover: #1d4ed8;
+  --link: #2563eb;
+  --terms-text: #6b7280;
+  --terms-link: #374151;
+  --divider: #e5e7eb;
+  --divider-text: #9ca3af;
+  --google-border: #d1d5db;
+  --google-text: #6b7280;
+  --toggle-border: #d1d5db;
+  --toggle-text: #6b7280;
+  --strength-empty: #e5e7eb;
+}
+.reg-page[data-theme='dark'] {
+  --bg: #0f1117;
+  --text: #f0f2f5;
+  --text-muted: #8992a2;
+  --border: #272b36;
+  --input-bg: #191c27;
+  --input-text: #f0f2f5;
+  --input-ph: #3d4455;
+  --focus-ring: rgb(59 130 246 / 20%);
+  --error: #f87171;
+  --error-bg: #2a1a1a;
+  --ok: #4ade80;
+  --btn-bg: #2563eb;
+  --btn-hover: #3b82f6;
+  --link: #60a5fa;
+  --terms-text: #555d6e;
+  --terms-link: #8992a2;
+  --divider: #272b36;
+  --divider-text: #444d5e;
+  --google-border: #272b36;
+  --google-text: #555d6e;
+  --toggle-border: #272b36;
+  --toggle-text: #555d6e;
+  --strength-empty: #272b36;
+}
+
+/* ── Shell ──────────────────────────────────────────────────────────── */
+.reg-page {
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body, system-ui, sans-serif);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  position: relative;
+}
+
+/* ── Theme toggle ───────────────────────────────────────────────────── */
+.reg-theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--toggle-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--toggle-text);
+  cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms;
+  z-index: 10;
+}
+.reg-theme-toggle svg { width: 16px; height: 16px; }
+.reg-theme-toggle:hover { background: var(--border); color: var(--text); }
+
+/* ── Inner container ────────────────────────────────────────────────── */
+.reg-inner { width: 100%; max-width: 440px; }
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.reg-header { margin-bottom: 28px; }
+.reg-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+.reg-brand img { width: 26px; height: 26px; object-fit: contain; }
+.reg-heading {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--text);
+}
+.reg-subheading { margin: 0; font-size: 14px; color: var(--text-muted); }
+
+/* ── Error box ──────────────────────────────────────────────────────── */
+.reg-error-box {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--error-bg);
+  color: var(--error);
+  font-size: 12.5px;
+  border: 1px solid color-mix(in srgb, var(--error) 20%, transparent);
+}
+
+/* ── Google button ──────────────────────────────────────────────────── */
+.reg-google-btn {
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--google-border);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--google-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: not-allowed;
+  opacity: 0.5;
+  margin-bottom: 20px;
+}
+.reg-google-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ── Divider ────────────────────────────────────────────────────────── */
+.reg-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--divider-text);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.reg-divider::before, .reg-divider::after { height: 1px; flex: 1; background: var(--divider); content: ''; }
+
+/* ── Form ───────────────────────────────────────────────────────────── */
+.reg-form { display: grid; gap: 14px; }
+
+.reg-field { display: grid; gap: 6px; }
+.reg-field label { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.reg-field input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  background: var(--input-bg);
+  color: var(--input-text);
+  font: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.reg-field input::placeholder { color: var(--input-ph); }
+.reg-field input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px var(--focus-ring); }
+.reg-field input.is-error { border-color: var(--error); }
+.reg-field input.is-error:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--error) 15%, transparent); }
+.reg-field input.is-ok { border-color: var(--ok); }
+
+.reg-field-error { font-size: 11.5px; color: var(--error); }
+.reg-field-ok { font-size: 11.5px; color: var(--ok); }
+
+/* ── Password field ─────────────────────────────────────────────────── */
+.reg-password-wrap { position: relative; }
+.reg-password-wrap input { padding-right: 44px; }
+.reg-eye-btn {
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 160ms;
+}
+.reg-eye-btn:hover { color: var(--text); }
+
+/* ── Strength bar ───────────────────────────────────────────────────── */
+.reg-strength { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.reg-strength-bars { display: flex; gap: 4px; flex: 1; }
+.reg-strength-bar { height: 4px; flex: 1; border-radius: 99px; transition: background 300ms; }
+.reg-strength span { font-size: 11px; font-weight: 500; white-space: nowrap; }
+
+/* ── Turnstile ──────────────────────────────────────────────────────── */
+.reg-turnstile-wrap { display: grid; gap: 6px; }
+.reg-turnstile-label { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.reg-turnstile-widget { min-height: 65px; }
+
+/* ── Terms ──────────────────────────────────────────────────────────── */
+.reg-terms {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--terms-text);
+}
+.reg-terms a { color: var(--terms-link); text-decoration: underline; }
+
+/* ── Submit ─────────────────────────────────────────────────────────── */
+.reg-submit {
+  width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--btn-bg);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms;
+}
+.reg-submit:hover:not(:disabled) { background: var(--btn-hover); }
+.reg-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+.reg-switch { margin-top: 20px; text-align: center; font-size: 12px; color: var(--text-muted); }
+.reg-switch a { color: var(--link); font-weight: 600; text-decoration: none; }
+.reg-switch a:hover { text-decoration: underline; }
+</style>
