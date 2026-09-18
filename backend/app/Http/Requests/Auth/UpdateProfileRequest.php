@@ -17,7 +17,7 @@ class UpdateProfileRequest extends FormRequest
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],
-            'phone' => ['sometimes', 'string', 'max:20', "unique:users,phone,{$userId}"],
+            'phone' => ['nullable', 'string', 'max:20', "unique:users,phone,{$userId}"],
             'avatar' => ['sometimes', 'image', 'max:2048'],
             'current_password' => ['nullable', 'string', 'required_with:password'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
