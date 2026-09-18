@@ -17,17 +17,17 @@ export default defineConfig({
     port: 5173,
 
     allowedHosts: [
-      'coy-excludable-foolishly.ngrok-free.dev',
-    ],
+      'api-tools.gg7.dev',
+    ],  
 
     proxy: {
       '/api': {
-        target: 'https://coy-excludable-foolishly.ngrok-free.dev',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
 
       '/storage': {
-        target: 'https://coy-excludable-foolishly.ngrok-free.dev',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },
