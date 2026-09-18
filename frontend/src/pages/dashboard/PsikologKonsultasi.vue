@@ -8,11 +8,19 @@ import {
   DocumentTextIcon,
   CheckCircleIcon,
   LockClosedIcon,
-  XMarkIcon,
   PlayIcon,
   StopIcon,
   ArrowTopRightOnSquareIcon,
-} from '@heroicons/vue/20/solid'
+} from '@heroicons/vue/24/outline'
+import PageHeader from '../../components/dashboard/PageHeader.vue'
+import StatusPill from '../../components/dashboard/StatusPill.vue'
+import BaseButton from '../../components/ui/BaseButton.vue'
+import BaseCard from '../../components/ui/BaseCard.vue'
+import BaseAvatar from '../../components/ui/BaseAvatar.vue'
+import BaseBadge from '../../components/ui/BaseBadge.vue'
+import BaseSkeleton from '../../components/ui/BaseSkeleton.vue'
+import BaseEmpty from '../../components/ui/BaseEmpty.vue'
+import BaseModal from '../../components/ui/BaseModal.vue'
 
 const bookings = ref<any[]>([])
 const loading = ref(true)
@@ -106,205 +114,194 @@ async function saveNote() {
     isSavingNote.value = false
   }
 }
+
+function formatDate(d: string) {
+  if (!d) return ''
+  return new Date(d).toLocaleDateString('id-ID', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto space-y-6">
-    <div>
-      <h2 class="font-display text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-        Konsultasi & Catatan Klinis
-      </h2>
-      <p class="text-neutral-500 text-sm mt-0.5">
-        Mulai sesi konsultasi pasien, bergabung ke ruang video call Jitsi, dan simpan catatan medis terenkripsi.
-      </p>
-    </div>
+  <div>
+    <PageHeader
+      title="Konsultasi & Catatan Klinis"
+      description="Mulai sesi konsultasi pasien, bergabung ke ruang video call Jitsi, dan simpan catatan medis terenkripsi."
+    />
 
-    <div v-if="message" class="p-3.5 rounded-2xl bg-emerald-50 text-emerald-700 text-xs font-semibold flex items-center gap-2">
-      <CheckCircleIcon class="w-4 h-4 text-emerald-500 shrink-0" />
+    <div
+      v-if="message"
+      class="mb-4 flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-xs font-medium text-emerald-600 dark:text-emerald-400"
+    >
+      <CheckCircleIcon class="h-4 w-4 shrink-0" />
       {{ message }}
     </div>
 
-    <div v-if="error" class="p-3.5 rounded-2xl bg-rose-50 text-rose-700 text-xs font-semibold">
+    <div v-if="error && !notesModalOpen" class="mb-4 rounded-xl bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400">
       {{ error }}
     </div>
 
     <!-- Booking List -->
-    <div v-if="loading" class="space-y-4">
-      <div v-for="i in 3" :key="i" class="h-32 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 animate-pulse" />
+    <div v-if="loading" class="space-y-3">
+      <BaseSkeleton v-for="i in 3" :key="i" class="h-28" />
     </div>
 
-    <div v-else-if="bookings.length === 0" class="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-12 text-center text-neutral-400">
-      <p class="text-4xl mb-2">📋</p>
-      <p class="font-medium text-neutral-700 dark:text-neutral-200 text-sm">Belum ada antrean booking</p>
-      <p class="text-xs text-neutral-500 mt-1">Booking dari pasien yang memilih jadwal Anda akan tampil di sini.</p>
-    </div>
+    <BaseCard v-else-if="bookings.length === 0" :padded="false">
+      <BaseEmpty
+        icon="📋"
+        title="Belum ada antrean booking"
+        description="Booking dari pasien yang memilih jadwal Anda akan tampil di sini."
+      />
+    </BaseCard>
 
-    <div v-else class="space-y-4">
-      <div
+    <div v-else class="space-y-3">
+      <BaseCard
         v-for="booking in bookings"
         :key="booking.id"
-        class="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200/80 dark:border-neutral-800 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6"
+        class="flex flex-col justify-between gap-5 md:flex-row md:items-center"
       >
-        <div class="space-y-3">
-          <div class="flex items-center gap-2">
-            <span
-              class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider"
-              :class="{
-                'bg-emerald-100 text-emerald-700': booking.status === 'confirmed',
-                'bg-sky-100 text-sky-700': booking.status === 'in_progress',
-                'bg-neutral-100 text-neutral-700': booking.status === 'completed',
-                'bg-rose-100 text-rose-700': booking.status === 'cancelled',
-              }"
-            >
-              {{ booking.status }}
-            </span>
-            <span class="text-xs text-neutral-400 font-mono">
+        <div class="min-w-0 space-y-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <StatusPill :status="booking.status" />
+            <span class="font-mono text-[10px] text-[var(--muted)]">
               {{ booking.order?.order_number }}
             </span>
           </div>
 
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-400 to-indigo-400 text-white font-bold flex items-center justify-center text-base shrink-0 shadow-xs">
-              {{ booking.pasien?.name?.charAt(0) || 'U' }}
-            </div>
-            <div>
-              <h3 class="font-display font-bold text-neutral-900 dark:text-neutral-100 text-base">
+            <BaseAvatar :name="booking.pasien?.name || 'U'" size="md" />
+            <div class="min-w-0">
+              <h3 class="truncate text-sm font-semibold text-[var(--text)]">
                 {{ booking.pasien?.name }}
               </h3>
-              <p class="text-xs text-neutral-500">
-                Kategori: {{ booking.order?.category_name }} · {{ booking.order?.duration_name }}
+              <p class="truncate text-[11px] text-[var(--muted)]">
+                {{ booking.order?.category_name }} · {{ booking.order?.duration_name }}
               </p>
             </div>
           </div>
 
-          <div class="flex items-center gap-4 text-xs text-neutral-600 dark:text-neutral-400 flex-wrap">
-            <span class="inline-flex items-center gap-1.5 font-medium text-neutral-900 dark:text-neutral-100">
-              <CalendarDaysIcon class="w-4 h-4 text-neutral-400" />
-              {{ booking.booking_date }}
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--muted)]">
+            <span class="inline-flex items-center gap-1.5 font-medium text-[var(--text)]">
+              <CalendarDaysIcon class="h-3.5 w-3.5" />
+              {{ formatDate(booking.booking_date) }}
             </span>
-            <span class="inline-flex items-center gap-1.5 font-medium text-rose-600">
-              <ClockIcon class="w-4 h-4 text-rose-400" />
-              {{ booking.start_time }} - {{ booking.end_time }}
+            <span class="inline-flex items-center gap-1.5 tabular-nums">
+              <ClockIcon class="h-3.5 w-3.5" />
+              {{ booking.start_time }}–{{ booking.end_time }} WIB
             </span>
           </div>
         </div>
 
-        <!-- Action buttons for Psikolog -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
-          <!-- Video Call -->
+        <!-- Actions -->
+        <div class="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center">
           <a
             v-if="booking.room_id"
             :href="`https://meet.jit.si/${booking.room_id}`"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors shadow-xs"
+            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
           >
-            <VideoCameraIcon class="w-3.5 h-3.5" />
-            <span>Ruang Video</span>
-            <ArrowTopRightOnSquareIcon class="w-3 h-3" />
+            <VideoCameraIcon class="h-3.5 w-3.5" />
+            Ruang Video
+            <ArrowTopRightOnSquareIcon class="h-3 w-3" />
           </a>
 
-          <!-- Start consultation -->
-          <button
+          <BaseButton
             v-if="booking.status === 'confirmed' && !booking.consultation"
-            type="button"
-            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition-colors shadow-xs"
+            variant="secondary"
+            size="sm"
             @click="startConsultation(booking)"
           >
-            <PlayIcon class="w-3.5 h-3.5" />
+            <PlayIcon class="h-3.5 w-3.5 text-[var(--muted)]" />
             Mulai Sesi
-          </button>
+          </BaseButton>
 
-          <!-- Notes button -->
-          <button
+          <BaseButton
             v-if="booking.consultation"
-            type="button"
-            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            variant="secondary"
+            size="sm"
             @click="openNotes(booking.consultation)"
           >
-            <DocumentTextIcon class="w-3.5 h-3.5 text-rose-500" />
+            <DocumentTextIcon class="h-3.5 w-3.5 text-[var(--accent)]" />
             Catatan Klinis
-          </button>
+          </BaseButton>
 
-          <!-- End consultation -->
-          <button
+          <BaseButton
             v-if="booking.status === 'in_progress' && booking.consultation?.status === 'in_progress'"
-            type="button"
-            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition-colors shadow-xs"
+            variant="danger"
+            size="sm"
             @click="endConsultation(booking.consultation.id)"
           >
-            <StopIcon class="w-3.5 h-3.5" />
-            Selesaikan Sesi
-          </button>
+            <StopIcon class="h-3.5 w-3.5" />
+            Selesaikan
+          </BaseButton>
         </div>
-      </div>
+      </BaseCard>
     </div>
 
-    <!-- ================= MODAL CATATAN KLINIS (ENCRYPTED) ================= -->
-    <div
-      v-if="notesModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+    <!-- ================= MODAL CATATAN KLINIS ================= -->
+    <BaseModal
+      v-model:open="notesModalOpen"
+      title="Catatan Rekam Medis Konsultasi"
+      max-width="max-w-lg"
     >
-      <div class="bg-white dark:bg-neutral-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-        <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
-          <div>
-            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded uppercase tracking-wider">
-              <LockClosedIcon class="w-3 h-3" />
-              Enkripsi AES-256 (UU PDP)
-            </span>
-            <h3 class="font-display text-base font-bold text-neutral-900 dark:text-neutral-100 mt-1">
-              Catatan Rekam Medis Konsultasi
-            </h3>
-          </div>
-          <button type="button" class="p-1 text-neutral-400 hover:text-neutral-600" @click="notesModalOpen = false">
-            <XMarkIcon class="w-5 h-5" />
-          </button>
-        </div>
+      <template #description>
+        <BaseBadge tone="success">
+          <LockClosedIcon class="h-3 w-3" />
+          Enkripsi AES-256 (UU PDP)
+        </BaseBadge>
+      </template>
 
+      <div class="space-y-4">
         <!-- Notes history -->
-        <div class="max-h-52 overflow-y-auto space-y-2 p-1">
-          <div v-if="loadingNotes" class="py-6 text-center text-xs text-neutral-400">
-            Memuat catatan terenkripsi...
+        <div class="max-h-52 space-y-2 overflow-y-auto">
+          <div v-if="loadingNotes" class="py-6 text-center text-xs text-[var(--muted)]">
+            Memuat catatan terenkripsi…
           </div>
-          <div v-else-if="notesList.length === 0" class="p-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-xl text-center text-xs text-neutral-400">
+          <div
+            v-else-if="notesList.length === 0"
+            class="rounded-xl bg-[var(--muted)]/5 py-6 text-center text-xs text-[var(--muted)]"
+          >
             Belum ada catatan klinis pada konsultasi ini.
           </div>
           <div
             v-for="note in notesList"
             :key="note.id"
-            class="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-100 dark:border-neutral-800 text-xs space-y-1"
+            class="rounded-xl border border-[var(--line)] p-3 text-xs"
           >
-            <div class="flex items-center justify-between text-[10px] text-neutral-400">
+            <div class="mb-1 flex items-center justify-between text-[10px] text-[var(--muted)]">
               <span>dr. {{ note.psikolog?.name || 'Psikolog' }}</span>
               <span>{{ note.created_at ? new Date(note.created_at).toLocaleString('id-ID') : '' }}</span>
             </div>
-            <p class="text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed">
+            <p class="whitespace-pre-wrap leading-relaxed text-[var(--text)]">
               {{ note.content }}
             </p>
           </div>
         </div>
 
-        <!-- Add note input -->
-        <div class="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
-          <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
-            Tambah Catatan Baru:
-          </label>
+        <!-- Add note -->
+        <div class="space-y-2 border-t border-[var(--line)] pt-3">
+          <label class="field-label">Tambah Catatan Baru</label>
           <textarea
             v-model="newNoteContent"
             rows="3"
-            placeholder="Tuliskan catatan observasi, diagnosis awal, atau rekomendasi terapi..."
-            class="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-3 text-xs outline-none focus:border-rose-500"
+            placeholder="Tuliskan catatan observasi, diagnosis awal, atau rekomendasi terapi…"
+            class="field-input resize-none"
           />
-          <button
-            type="button"
-            class="w-full py-2.5 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 transition-colors shadow-xs"
+          <BaseButton
+            size="sm"
+            class="w-full"
             :disabled="isSavingNote || !newNoteContent.trim()"
             @click="saveNote"
           >
-            {{ isSavingNote ? 'Menyimpan (Enkripsi)...' : 'Simpan Catatan Terenkripsi' }}
-          </button>
+            {{ isSavingNote ? 'Menyimpan (Enkripsi)…' : 'Simpan Catatan Terenkripsi' }}
+          </BaseButton>
         </div>
       </div>
-    </div>
+    </BaseModal>
   </div>
 </template>

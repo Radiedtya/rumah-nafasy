@@ -27,14 +27,14 @@ class BookingResource extends JsonResource
                 'id' => $this->pasien?->id,
                 'name' => $this->pasien?->name,
                 'avatar' => $this->pasien?->avatar
-                    ? asset('storage/' . $this->pasien->avatar)
+                    ? '/storage/' . $this->pasien->avatar
                     : null,
             ],
             'psikolog' => [
                 'id' => $this->psikolog?->id,
                 'name' => $this->psikolog?->name,
                 'avatar' => $this->psikolog?->avatar
-                    ? asset('storage/' . $this->psikolog->avatar)
+                    ? '/storage/' . $this->psikolog->avatar
                     : null,
                 'specialization' => $this->psikolog?->psikologProfile?->specialization?->name,
             ],
