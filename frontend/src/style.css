@@ -26,6 +26,76 @@
   display: none;
 }
 
+/* ===== Dashboard (Reka UI) animations ===== */
+@keyframes dialog-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes drawer-in {
+  from { opacity: 0.5; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.dialog-content {
+  animation: dialog-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dialog-overlay {
+  animation: overlay-in 150ms ease-out;
+}
+.menu-content {
+  animation: pop-in 120ms ease-out;
+}
+
+/* Collapsible sidebar nav labels */
+.nav-label {
+  white-space: nowrap;
+  transition: opacity 150ms ease;
+}
+.rail-collapsed .nav-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Dashboard form field */
+.field-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--text);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.field-input::placeholder {
+  color: var(--muted);
+}
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.field-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
 /* ===== Design tokens ===== */
 :root {
   color-scheme: light;
@@ -37,7 +107,8 @@
   --line:       #d9d9d4;
   --inverse:    #111111;
   --inverse-text: #f7f7f5;
-  --accent:     #ff5b52;
+  --accent:       #1a7f37;
+  --accent-hover: #176f31;
   --ink:        #2a1e2c;
   --copy:       #31253a;
 
@@ -59,6 +130,14 @@
     --inverse-text: #111111;
     --ink:        #f4f4ef;
     --copy:       #f4f4ef;
+
+    /* Sidebar (theme-aware) */
+    --sidebar-bg:           #09090b;
+    --sidebar-border:       rgb(255 255 255 / 8%);
+    --sidebar-text:         #a1a1aa;
+    --sidebar-text-active:  #fafafa;
+    --sidebar-hover:        rgb(255 255 255 / 5%);
+    --sidebar-hover-active: rgb(255 255 255 / 10%);
   }
 }
 
@@ -73,6 +152,14 @@
   --inverse-text: #f7f7f5;
   --ink:        #2a1e2c;
   --copy:       #31253a;
+
+  /* Sidebar (theme-aware) */
+  --sidebar-bg:           #fafafa;
+  --sidebar-border:       #ececea;
+  --sidebar-text:         #52525b;
+  --sidebar-text-active:  #18181b;
+  --sidebar-hover:        rgb(0 0 0 / 4%);
+  --sidebar-hover-active: rgb(0 0 0 / 8%);
 }
 
 :root[data-theme="dark"] {
@@ -86,6 +173,14 @@
   --inverse-text: #111111;
   --ink:        #f4f4ef;
   --copy:       #f4f4ef;
+
+  /* Sidebar (theme-aware) */
+  --sidebar-bg:           #09090b;
+  --sidebar-border:       rgb(255 255 255 / 8%);
+  --sidebar-text:         #a1a1aa;
+  --sidebar-text-active:  #fafafa;
+  --sidebar-hover:        rgb(255 255 255 / 5%);
+  --sidebar-hover-active: rgb(255 255 255 / 10%);
 }
 
 /* ===== Base ===== */
@@ -208,7 +303,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 .button:hover {
-  background: #ed4d45;
+  background: var(--accent-hover);
   transform: translateY(-2px);
 }
 

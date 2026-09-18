@@ -18,7 +18,7 @@ export default defineConfig({
 
     allowedHosts: [
       'coy-excludable-foolishly.ngrok-free.dev',
-    ],
+    ],  
 
     proxy: {
       '/api': {
