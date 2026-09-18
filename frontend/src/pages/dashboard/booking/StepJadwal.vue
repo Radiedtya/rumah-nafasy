@@ -126,7 +126,7 @@ async function confirmSchedule() {
           v-for="slot in store.slots"
           :key="slot.start_time"
           type="button"
-          class="rounded-xl border p-3.5 text-center tabular-nums transition-all"
+          class="rounded-xl border p-3.5 text-center tabular-nums transition-colors"
           :class="
             store.selectedSlot?.start_time === slot.start_time
               ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
