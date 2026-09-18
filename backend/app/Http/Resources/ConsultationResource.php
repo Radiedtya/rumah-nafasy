@@ -20,13 +20,24 @@ class ConsultationResource extends JsonResource
                     'room_id' => $this->booking->room_id,
                     'status' => $this->booking->status,
                     'pasien' => [
-                        'id' => $this->booking->pasien?->id,
-                        'name' => $this->booking->pasien?->name,
+                        'id'     => $this->booking->pasien?->id,
+                        'name'   => $this->booking->pasien?->name,
+                        'avatar' => $this->booking->pasien?->avatar
+                            ? '/storage/' . $this->booking->pasien->avatar
+                            : null,
+                    ],
+                    'psikolog' => [
+                        'id'             => $this->booking->psikolog?->id,
+                        'name'           => $this->booking->psikolog?->name,
+                        'avatar'         => $this->booking->psikolog?->avatar
+                            ? '/storage/' . $this->booking->psikolog->avatar
+                            : null,
+                        'specialization' => $this->booking->psikolog?->psikologProfile?->specialization?->name,
                     ],
                     'order' => [
-                        'order_number' => $this->booking->order?->order_number,
-                        'category_name' => $this->booking->order?->category?->name,
-                        'duration_name' => $this->booking->order?->duration?->name,
+                        'order_number'      => $this->booking->order?->order_number,
+                        'category_name'     => $this->booking->order?->category?->name,
+                        'duration_name'     => $this->booking->order?->duration?->name,
                         'consultation_type' => $this->booking->order?->consultation_type,
                     ],
                 ];

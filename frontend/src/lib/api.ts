@@ -3,10 +3,22 @@
  * Zero heavy dependencies — native fetch with typed responses
  */
 
+/** Bentuk `meta` dari paginateResponse() (trait ApiResponse di backend Laravel) */
+export interface ApiMeta {
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+  from: number | null
+  to: number | null
+  has_more: boolean
+}
+
 export interface ApiResponse<T = any> {
   success: boolean
   message: string
   data: T
+  meta?: ApiMeta
   errors?: Record<string, string[]>
 }
 
