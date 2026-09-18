@@ -10,47 +10,53 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // ==================== ADMIN ====================
+        // ==================== OWNER / SUPER ADMIN ====================
 
         $admin = User::firstOrCreate(
-            ['email' => 'admin@rumahnatasy.id'],
+            ['email' => 'nairha@rumahnatasy.id'],
             [
-                'name' => 'Admin Rumah Natasy',
-                'password' => Hash::make('password'),
-                'phone' => '081234567890',
+                'name' => 'Nairha',
+                'password' => Hash::make('nairha@rumahnatasy2024!'),
+                'phone' => '+6281234567890',
                 'email_verified_at' => now(),
                 'phone_verified_at' => now(),
                 'is_active' => true,
             ]
         );
-        $admin->assignRole('admin');
+        $admin->syncRoles(['admin']);
+
+        // Hapus admin lama jika ada (migrasi dari dummy)
+        User::where('email', 'admin@rumahnatasy.id')
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', '!=', 'admin'))
+            ->where('name', 'Admin Rumah Natasy')
+            ->delete();
 
         // ==================== PSIKOLOG ====================
 
         $psikologData = [
             [
                 'name' => 'dr. Andi Pratama, M.Psi',
-                'email' => 'andi@rumahnatasy.id',
+                'email' => 'andi@rumahnafasy.id',
                 'phone' => '081234567891',
             ],
             [
                 'name' => 'dr. Sari Dewi, M.Psi',
-                'email' => 'sari@rumahnatasy.id',
+                'email' => 'sari@rumahnafasy.id',
                 'phone' => '081234567892',
             ],
             [
                 'name' => 'dr. Budi Santoso, M.Psi',
-                'email' => 'budi@rumahnatasy.id',
+                'email' => 'budi@rumahnafasy.id',
                 'phone' => '081234567893',
             ],
             [
                 'name' => 'dr. Maya Sari, M.Psi',
-                'email' => 'maya@rumahnatasy.id',
+                'email' => 'maya@rumahnafasy.id',
                 'phone' => '081234567894',
             ],
             [
                 'name' => 'dr. Doni Hartanto, M.Psi',
-                'email' => 'doni@rumahnatasy.id',
+                'email' => 'doni@rumahnafasy.id',
                 'phone' => '081234567895',
             ],
         ];
@@ -67,7 +73,7 @@ class UserSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
-            $psikolog->assignRole('psikolog');
+            $psikolog->syncRoles(['psikolog']);
         }
 
         // ==================== PASIEN ====================
@@ -92,7 +98,7 @@ class UserSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
-            $pasien->assignRole('pasien');
+            $pasien->syncRoles(['pasien']);
         }
     }
 }

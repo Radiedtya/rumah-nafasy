@@ -26,6 +26,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);
             Route::get('/me', [ProfileController::class, 'me']);
             Route::put('/profile', [ProfileController::class, 'update']);
+            Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
+            Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
         });
     });
 
@@ -116,12 +118,24 @@ Route::prefix('v1')->group(function () {
         // Dashboard
         Route::get('/dashboard', [Admin\DashboardController::class, 'index']);
 
-        // Manage Psikolog
+        // Manage Psikolog — CRUD lengkap
         Route::get('/psikolog', [Admin\PsikologController::class, 'index']);
+        Route::post('/psikolog', [Admin\PsikologController::class, 'store']);
         Route::get('/psikolog/{user}', [Admin\PsikologController::class, 'show']);
+        Route::put('/psikolog/{user}', [Admin\PsikologController::class, 'update']);
+        Route::delete('/psikolog/{user}', [Admin\PsikologController::class, 'destroy']);
         Route::put('/psikolog/{user}/verify', [Admin\PsikologController::class, 'verify']);
         Route::put('/psikolog/{user}/suspend', [Admin\PsikologController::class, 'suspend']);
         Route::put('/psikolog/{user}/activate', [Admin\PsikologController::class, 'activate']);
+
+        // Semua Jadwal (lintas psikolog)
+        Route::get('/bookings', [Admin\BookingController::class, 'index']);
+        Route::get('/bookings/{booking}', [Admin\BookingController::class, 'show']);
+        Route::put('/bookings/{booking}/status', [Admin\BookingController::class, 'updateStatus']);
+
+        // Semua Konsultasi (lintas psikolog)
+        Route::get('/consultations', [Admin\ConsultationController::class, 'index']);
+        Route::get('/consultations/{consultation}', [Admin\ConsultationController::class, 'show']);
 
         // Categories (CRUD)
         Route::apiResource('categories', Admin\CategoryController::class);
