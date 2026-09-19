@@ -51,11 +51,14 @@ class EmailVerificationController extends Controller
                 return $this->errorResponse('Kode verifikasi tidak valid atau kedaluwarsa', 422);
             }
 
-            // Handle WAJIB & harus cocok — sesi OTP terikat ke pendaftar;
-            // pihak lain yang hanya tahu email tidak bisa memverifikasi.
+            // Handle SALAH → tolak. Handle KOSONG → teruskan: kode OTP yang
+            // benar SUDAH menjadi bukti kepemilikan email (hash + batas
+            // percobaan + TTL). Handle hanyalah pengenal sesi — mewajibkannya
+            // justru menggagalkan pengguna sah yang membuka halaman OTP dari
+            // tab sesi lama/berbeda (bug riil yang dilaporkan pengguna).
             $handle = (string) $request->input('verify_handle', '');
 
-            if ($handle === '' || ! hash_equals($pending->verify_handle, $handle)) {
+            if ($handle !== '' && ! hash_equals($pending->verify_handle, $handle)) {
                 return $this->errorResponse('Kode verifikasi tidak valid atau kedaluwarsa', 422);
             }
 
@@ -157,10 +160,11 @@ class EmailVerificationController extends Controller
         $pending = PendingRegistration::where('email', $email)->first();
 
         if ($pending && ! $pending->isExpired()) {
-            // Handle wajib & cocok; selain itu anggap tak dikenal (generik).
+            // Handle salah → generik. Handle kosong → tetap proses; cooldown +
+            // kuota per-jam di service yang menjaga dari penyalahgunaan.
             $handle = (string) $request->input('verify_handle', '');
 
-            if ($handle === '' || ! hash_equals($pending->verify_handle, $handle)) {
+            if ($handle !== '' && ! hash_equals($pending->verify_handle, $handle)) {
                 return $this->genericResendResponse();
             }
 

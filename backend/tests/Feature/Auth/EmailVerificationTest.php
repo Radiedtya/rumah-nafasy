@@ -190,18 +190,22 @@ class EmailVerificationTest extends TestCase
         $this->assertNull(User::where('email', 'rina@example.com')->first());
     }
 
-    public function test_verifikasi_tanpa_handle_ditolak_untuk_pendaftar_baru(): void
+    public function test_verifikasi_tanpa_handle_tetap_berhasil_bila_kode_benar(): void
     {
+        // Sesi halaman OTP bisa kehilangan handle (tab lama, re-register dsb.)
+        // — kode yang benar SUDAH bukti kepemilikan email, jadi verifikasi
+        // diteruskan. Handle salah tetap ditolak (test terpisah).
         $this->registerPending();
         $otp = $this->latestPlainOtp();
 
-        // Yang tahu email saja (tanpa handle sesi) tidak bisa memverifikasi
         $this->postJson('/api/v1/auth/email/verify', [
             'email' => 'rina@example.com',
             'code' => $otp,
-        ])->assertStatus(422);
+        ])->assertOk()
+            ->assertJsonPath('data.verified', true);
 
-        $this->assertNull(User::where('email', 'rina@example.com')->first());
+        $this->assertNotNull(User::where('email', 'rina@example.com')->first());
+        $this->assertDatabaseMissing('pending_registrations', ['email' => 'rina@example.com']);
     }
 
     public function test_resend_menolak_sebelum_cooldown_selesai(): void
