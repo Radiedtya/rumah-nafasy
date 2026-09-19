@@ -81,7 +81,7 @@ function proceed() {
   if (customMode.value && customMinutesInput.value !== '' && !customError.value) {
     applyCustom()
   }
-  router.push(`/dashboard/booking/${store.psikolog?.slug}/jadwal`)
+  router.push(`/dashboard/booking/${store.psikolog?.slug}/keluhan`)
 }
 </script>
 
@@ -247,20 +247,6 @@ function proceed() {
       </div>
     </section>
 
-    <!-- 4. Catatan opsional -->
-    <section>
-      <h2 class="text-sm font-semibold text-[var(--text)]">
-        Catatan untuk Psikolog <span class="font-normal text-[var(--muted)]">(opsional)</span>
-      </h2>
-      <textarea
-        v-model="store.note"
-        rows="3"
-        maxlength="500"
-        placeholder="Contoh: kondisi atau keluhan yang ingin didiskusikan…"
-        class="field-input mt-3 resize-none"
-      />
-    </section>
-
     <!-- Footer: tarif acuan + aksi -->
     <div class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
       <div>
@@ -271,7 +257,7 @@ function proceed() {
         </p>
       </div>
       <BaseButton size="md" :disabled="!canProceed" @click="proceed">
-        Lanjut ke Jadwal
+        Lanjut ke Keluhan
         <ArrowRightIcon class="h-3.5 w-3.5" />
       </BaseButton>
     </div>

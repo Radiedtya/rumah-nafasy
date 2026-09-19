@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { apiFetch } from '../../lib/api'
 import {
   CalendarDaysIcon,
@@ -11,6 +13,7 @@ import {
   PlayIcon,
   StopIcon,
   ArrowTopRightOnSquareIcon,
+  ChevronDownIcon,
 } from '@heroicons/vue/24/outline'
 import PageHeader from '../../components/dashboard/PageHeader.vue'
 import StatusPill from '../../components/dashboard/StatusPill.vue'
@@ -101,6 +104,24 @@ async function submitReject() {
   } finally {
     decidingId.value = null
   }
+}
+
+// ── Keluhan pasien (Markdown → render disanitasi) ──────────────────────
+const expandedComplaints = ref<Record<number, boolean>>({})
+
+function toggleComplaint(id: number) {
+  expandedComplaints.value[id] = !expandedComplaints.value[id]
+}
+
+function complaintHtml(md: string | null | undefined): string {
+  if (!md || !md.trim()) return ''
+  const raw = marked.parse(md, { async: false, gfm: true, breaks: true })
+  return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } })
+}
+
+function complaintPreview(md: string | null | undefined): string {
+  if (!md) return ''
+  return md.replace(/[#*`>\-_]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)
 }
 
 function categoryLabel(booking: any): string {
@@ -261,6 +282,31 @@ function formatDate(d: string) {
               <ClockIcon class="h-3.5 w-3.5" />
               {{ booking.start_time }}–{{ booking.end_time }} WIB
             </span>
+          </div>
+
+          <!-- Keluhan pasien: preview + expand -->
+          <div v-if="booking.complaint_markdown" class="rounded-xl border border-[var(--line)] bg-[var(--muted)]/4 p-3">
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 text-left"
+              @click="toggleComplaint(booking.id)"
+            >
+              <DocumentTextIcon class="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
+              <span class="min-w-0 flex-1 truncate text-[11px] italic text-[var(--muted)]">
+                Keluhan pasien: “{{ complaintPreview(booking.complaint_markdown) }}…”
+              </span>
+              <ChevronDownIcon
+                class="h-3.5 w-3.5 shrink-0 text-[var(--muted)] transition-transform"
+                :class="expandedComplaints[booking.id] ? 'rotate-180' : ''"
+              />
+            </button>
+            <div
+              v-if="expandedComplaints[booking.id]"
+              class="markdown-body mt-2.5 border-t border-[var(--line)] pt-2.5 text-xs leading-relaxed text-[var(--text)]"
+            >
+              <!-- eslint-disable-next-line vue/no-v-html — sudah disanitasi DOMPurify -->
+              <div v-html="complaintHtml(booking.complaint_markdown)" />
+            </div>
           </div>
         </div>
 
@@ -430,3 +476,43 @@ function formatDate(d: string) {
     </BaseModal>
   </div>
 </template>
+
+<style scoped>
+/* Render Markdown keluhan pasien — konsisten dengan MarkdownEditor. */
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.9em 0 0.35em;
+  color: var(--text);
+}
+.markdown-body :deep(h1:first-child),
+.markdown-body :deep(h2:first-child),
+.markdown-body :deep(h3:first-child) {
+  margin-top: 0;
+}
+.markdown-body :deep(p) {
+  margin: 0.4em 0;
+}
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+}
+.markdown-body :deep(ul) {
+  list-style: disc;
+}
+.markdown-body :deep(ol) {
+  list-style: decimal;
+}
+.markdown-body :deep(strong) {
+  font-weight: 600;
+}
+.markdown-body :deep(code) {
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+}
+</style>

@@ -24,6 +24,7 @@ class Booking extends Model
         'room_id',
         'status',
         'rejected_reason',
+        'complaint_markdown',
         'locked_until',
     ];
 

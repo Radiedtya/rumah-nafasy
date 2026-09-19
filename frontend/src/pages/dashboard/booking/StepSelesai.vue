@@ -75,6 +75,9 @@ function formatDate(d: string | null | undefined) {
           💳 <strong class="text-[var(--text)]">Pembayaran</strong> dilakukan langsung ke psikolog
           <strong class="text-[var(--text)]">setelah sesi selesai</strong> — tidak melalui aplikasi.
         </p>
+        <p v-if="store.complaint?.trim()" class="mt-2 text-[11px] leading-relaxed text-[var(--muted)]">
+          📝 Keluhan Anda ikut terkirim dan hanya dibaca oleh psikolog pilihan.
+        </p>
       </div>
 
       <div class="mt-7 flex flex-wrap items-center justify-center gap-3">

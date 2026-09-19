@@ -69,6 +69,7 @@ export const routes: RouteRecordRaw[] = [
     children: [
       { path: '', component: () => import('../pages/dashboard/Overview.vue') },
       { path: 'sesi', component: () => import('../pages/dashboard/Sesi.vue') },
+      { path: 'sesi/:id', component: () => import('../pages/dashboard/SesiDetail.vue') },
       { path: 'psikolog', component: () => import('../pages/dashboard/Psikolog.vue') },
       {
         path: 'booking/:slug',
@@ -76,6 +77,7 @@ export const routes: RouteRecordRaw[] = [
         meta: { ssg: false },
         children: [
           { path: '', component: () => import('../pages/dashboard/booking/StepPaket.vue'), meta: { ssg: false } },
+          { path: 'keluhan', component: () => import('../pages/dashboard/booking/StepKeluhan.vue'), meta: { ssg: false } },
           { path: 'jadwal', component: () => import('../pages/dashboard/booking/StepJadwal.vue'), meta: { ssg: false } },
           { path: 'selesai', component: () => import('../pages/dashboard/booking/StepSelesai.vue'), meta: { ssg: false } },
         ],

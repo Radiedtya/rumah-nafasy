@@ -49,6 +49,7 @@ class BookingResource extends JsonResource
                 ] : null;
             }),
             'rejected_reason' => $this->rejected_reason,
+            'complaint_markdown' => $this->complaint_markdown,
             'booking_date' => $this->booking_date?->format('Y-m-d'),
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,

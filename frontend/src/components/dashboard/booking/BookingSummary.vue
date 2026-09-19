@@ -63,6 +63,10 @@ const typeLabel = computed(() => (store.consultationType === 'offline' ? 'Offlin
             <template v-else>Sepakatan</template>
           </dd>
         </div>
+        <div v-if="store.complaint?.trim()" class="flex items-start justify-between gap-3">
+          <dt class="shrink-0 text-[var(--muted)]">Keluhan</dt>
+          <dd class="text-right font-medium text-[var(--text)]">✓ Ditulis untuk psikolog</dd>
+        </div>
       </dl>
 
       <!-- Catatan pembayaran P2P -->
