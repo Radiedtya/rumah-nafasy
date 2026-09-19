@@ -76,7 +76,6 @@ export const routes: RouteRecordRaw[] = [
         meta: { ssg: false },
         children: [
           { path: '', component: () => import('../pages/dashboard/booking/StepPaket.vue'), meta: { ssg: false } },
-          { path: 'pembayaran', component: () => import('../pages/dashboard/booking/StepPembayaran.vue'), meta: { ssg: false } },
           { path: 'jadwal', component: () => import('../pages/dashboard/booking/StepJadwal.vue'), meta: { ssg: false } },
           { path: 'selesai', component: () => import('../pages/dashboard/booking/StepSelesai.vue'), meta: { ssg: false } },
         ],

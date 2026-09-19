@@ -3,7 +3,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { CheckIcon } from '@heroicons/vue/24/outline'
 
 interface Props {
-  current: 1 | 2 | 3 | 4
+  current: 1 | 2 | 3
   clickable?: boolean
 }
 
@@ -14,12 +14,11 @@ const slug = route.params.slug as string
 
 const steps = [
   { step: 1, label: 'Paket' },
-  { step: 2, label: 'Pembayaran' },
-  { step: 3, label: 'Jadwal' },
-  { step: 4, label: 'Selesai' },
+  { step: 2, label: 'Jadwal' },
+  { step: 3, label: 'Selesai' },
 ] as const
 
-const SUFFIXES = ['', '/pembayaran', '/jadwal', '/selesai'] as const
+const SUFFIXES = ['', '/jadwal', '/selesai'] as const
 
 function stepTo(step: number) {
   return `/dashboard/booking/${slug}${SUFFIXES[step - 1]}`

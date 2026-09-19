@@ -15,11 +15,15 @@ class Booking extends Model
         'order_id',
         'pasien_id',
         'psikolog_id',
+        'consultation_type',
+        'duration_minutes',
+        'requested_category_id',
         'booking_date',
         'start_time',
         'end_time',
         'room_id',
         'status',
+        'rejected_reason',
         'locked_until',
     ];
 
@@ -59,6 +63,11 @@ class Booking extends Model
         return $this->belongsTo(User::class, 'psikolog_id');
     }
 
+    public function requestedCategory()
+    {
+        return $this->belongsTo(ClientCategory::class, 'requested_category_id');
+    }
+
     public function consultation()
     {
         return $this->hasOne(Consultation::class);
@@ -79,6 +88,16 @@ class Booking extends Model
     public function isConfirmed(): bool
     {
         return $this->status === 'confirmed';
+    }
+
+    public function isPendingPsikolog(): bool
+    {
+        return $this->status === 'pending_psikolog';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
     }
 
     public function isInProgress(): bool
@@ -131,6 +150,11 @@ class Booking extends Model
 
     public function canCancel(): bool
     {
+        // Pengajuan yang masih menunggu persetujuan psikolog selalu boleh dibatalkan
+        if ($this->isPendingPsikolog()) {
+            return true;
+        }
+
         if (!$this->booking_date) {
             return false;
         }

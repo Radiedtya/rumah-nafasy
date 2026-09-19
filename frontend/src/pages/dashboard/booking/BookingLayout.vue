@@ -17,31 +17,12 @@ const slug = computed(() => route.params.slug as string)
 const notFound = ref(false)
 const booted = ref(false)
 
-function currentStep(): 1 | 2 | 3 | 4 {
-  if (route.path.endsWith('/pembayaran')) return 2
-  if (route.path.endsWith('/jadwal')) return 3
-  if (route.path.endsWith('/selesai')) return 4
+function currentStep(): 1 | 2 | 3 {
+  if (route.path.endsWith('/jadwal')) return 2
+  if (route.path.endsWith('/selesai')) return 3
   return 1
 }
 const step = computed(() => currentStep())
-
-async function loadCatalog() {
-  if (store.categories.length > 0 && store.durations.length > 0) {
-    store.applyCatalogDefaults()
-    return
-  }
-  try {
-    const [catRes, durRes] = await Promise.all([
-      apiFetch('public/categories'),
-      apiFetch('public/durations'),
-    ])
-    store.categories = catRes.data || []
-    store.durations = durRes.data || []
-    store.applyCatalogDefaults()
-  } catch (e) {
-    console.error('Failed loading booking catalog', e)
-  }
-}
 
 async function loadDetail() {
   store.startFor(slug.value)
@@ -62,57 +43,25 @@ async function loadDetail() {
   }
 }
 
-/**
- * Resume sesi pembayaran (mis. kembali dari halaman Midtrans via
- * /dashboard/booking/payment/{order_number} yang diarahkan ke sini).
- * Endpoint pembayaran bersifat idempotent untuk order pending.
- */
-async function resumePayment(orderId: string) {
-  try {
-    const payRes = await apiFetch<{
-      payment: { status: string }
-      snap_url: string
-      is_mock?: boolean
-    }>(`pasien/orders/${orderId}/payment`, { method: 'POST' })
-    store.payment = payRes.data.payment
-    store.snapUrl = payRes.data.snap_url
-    store.isMockPayment = payRes.data.is_mock === true
-
-    const orderRes = await apiFetch(`pasien/orders/${orderId}`)
-    store.order = orderRes.data
-    store.paymentConfirmed = orderRes.data?.status === 'paid'
-  } catch {
-    // Order tidak ditemukan / bukan milik user — biarkan wizard mulai dari awal
-  }
-}
-
 watch(slug, () => {
   if (slug.value) loadDetail()
 })
 
 // ── Gate urutan langkah wizard ──────────────────────────────────────────────
-// Tidak boleh loncat ke Jadwal/Selesai sebelum order terbayar.
+// Selesai hanya boleh diakses setelah pengajuan terkirim (ada hasil booking).
 watch(
   [step, booted],
   ([s, ready]) => {
     if (!ready || notFound.value) return
-    const paid = store.paymentConfirmed || store.order?.status === 'paid'
-    if (s >= 3 && !paid) {
-      router.replace(
-        store.psikolog?.slug
-          ? `/dashboard/booking/${store.psikolog.slug}/pembayaran`
-          : `/dashboard/booking/${slug.value}/pembayaran`,
-      )
-    } else if (s === 2 && !store.order && !route.query.order) {
-      router.replace(`/dashboard/booking/${slug.value}`)
+    if (s === 3 && !store.confirmedBooking) {
+      router.replace(`/dashboard/booking/${slug.value}/jadwal`)
     }
   },
   { immediate: false },
 )
 
 onMounted(async () => {
-  // Gate sesi: tanpa token → login. (Guard router sudah menjalankan ini,
-  // ini lapisan kedua untuk akses langsung via URL.)
+  // Gate sesi: tanpa token → login (lapisan kedua di atas guard router).
   if (!auth.token) {
     router.replace({ path: '/login', query: { redirect: route.fullPath } })
     return
@@ -125,13 +74,6 @@ onMounted(async () => {
     }
   }
 
-  // Resume pembayaran jika kembali dari payment gateway (?order=<id>)
-  const orderId = route.query.order
-  if (orderId && !store.order) {
-    await resumePayment(String(orderId))
-  }
-
-  await loadCatalog()
   await loadDetail()
   booted.value = true
 })
@@ -164,7 +106,7 @@ onMounted(async () => {
           Konsultasi dengan {{ store.psikolog?.name }}
         </h1>
         <p class="mt-1 text-sm text-[var(--muted)]">
-          {{ store.psikolog?.specialization || 'Psikolog Klinis' }} · Pilih paket, bayar, lalu tentukan jadwal.
+          {{ store.psikolog?.specialization || 'Psikolog Klinis' }} · Pilih paket, tentukan jadwal, tanpa pembayaran di aplikasi.
         </p>
       </template>
 

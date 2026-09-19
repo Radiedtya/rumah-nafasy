@@ -58,9 +58,11 @@ onMounted(() => {
 })
 
 const tabCounts = computed(() => ({
-  upcoming: bookings.value.filter((b) => b.status === 'confirmed' || b.status === 'in_progress').length,
+  upcoming: bookings.value.filter((b) =>
+    ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status),
+  ).length,
   completed: bookings.value.filter((b) => b.status === 'completed').length,
-  cancelled: bookings.value.filter((b) => b.status === 'cancelled').length,
+  cancelled: bookings.value.filter((b) => b.status === 'cancelled' || b.status === 'rejected').length,
   all: bookings.value.length,
 }))
 
@@ -73,13 +75,15 @@ const tabs = computed(() => [
 
 const filteredBookings = computed(() => {
   if (activeTab.value === 'upcoming') {
-    return bookings.value.filter((b) => b.status === 'confirmed' || b.status === 'in_progress')
+    return bookings.value.filter((b) =>
+      ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status),
+    )
   }
   if (activeTab.value === 'completed') {
     return bookings.value.filter((b) => b.status === 'completed')
   }
   if (activeTab.value === 'cancelled') {
-    return bookings.value.filter((b) => b.status === 'cancelled')
+    return bookings.value.filter((b) => b.status === 'cancelled' || b.status === 'rejected')
   }
   return bookings.value
 })
@@ -103,7 +107,7 @@ async function loadRescheduleSlots() {
   selectedNewSlot.value = null
 
   try {
-    const durMinutes = selectedBooking.value.order?.duration_minutes || 60
+    const durMinutes = selectedBooking.value.duration_minutes || selectedBooking.value.order?.duration_minutes || 60
     const res = await apiFetch(
       `pasien/psikolog/${selectedBooking.value.psikolog.id}/slots?date=${rescheduleDate.value}&duration_minutes=${durMinutes}`,
     )
@@ -222,12 +226,9 @@ function formatDate(d: string) {
         class="flex flex-col justify-between gap-5 md:flex-row md:items-center"
       >
         <div class="min-w-0 space-y-3">
-          <!-- Status & order number -->
+          <!-- Status -->
           <div class="flex flex-wrap items-center gap-2">
             <StatusPill :status="booking.status" />
-            <span class="font-mono text-[10px] text-[var(--muted)]">
-              {{ booking.order?.order_number }}
-            </span>
             <span
               v-if="booking.reschedule_count > 0"
               class="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400"
@@ -235,6 +236,12 @@ function formatDate(d: string) {
               Reschedule: {{ booking.reschedule_count }}/2x
             </span>
           </div>
+          <p
+            v-if="booking.status === 'rejected' && booking.rejected_reason"
+            class="text-[11px] text-rose-600 dark:text-rose-400"
+          >
+            Alasan penolakan: {{ booking.rejected_reason }}
+          </p>
 
           <!-- Psikolog -->
           <div class="flex items-center gap-3">
@@ -259,7 +266,7 @@ function formatDate(d: string) {
               <ClockIcon class="h-3.5 w-3.5" />
               {{ booking.start_time }}–{{ booking.end_time }} WIB
             </span>
-            <span>({{ booking.order?.duration_name || '60 Menit' }})</span>
+            <span>({{ booking.duration_minutes ?? 60 }} menit · {{ booking.consultation_type === 'offline' ? 'Offline' : 'Video' }})</span>
           </div>
         </div>
 
@@ -379,7 +386,8 @@ function formatDate(d: string) {
           {{ cancelError }}
         </div>
 
-        <div class="rounded-xl border border-[var(--line)] bg-[var(--muted)]/5 p-4">
+        <!-- Kebijakan refund hanya untuk booking alur lama (via order terbayar) -->
+        <div v-if="cancelBookingData?.order" class="rounded-xl border border-[var(--line)] bg-[var(--muted)]/5 p-4">
           <p class="text-xs font-semibold text-[var(--text)]">Kebijakan Pengembalian Dana</p>
           <ul class="mt-2 list-inside list-disc space-y-1 text-[11px] leading-relaxed text-[var(--muted)]">
             <li><strong class="text-[var(--text)]">H-3 atau lebih:</strong> Refund 100%</li>
@@ -387,6 +395,11 @@ function formatDate(d: string) {
             <li><strong class="text-[var(--text)]">H-1 (24–48 jam):</strong> Refund 50%</li>
             <li><strong class="text-[var(--text)]">Kurang dari 24 jam:</strong> Tidak dapat direfund</li>
           </ul>
+        </div>
+        <div v-else class="rounded-xl bg-[var(--muted)]/6 p-3.5">
+          <p class="text-[11px] leading-relaxed text-[var(--muted)]">
+            Pengajuan ini dibatalkan tanpa biaya — tidak ada pembayaran yang diproses aplikasi.
+          </p>
         </div>
 
         <div>

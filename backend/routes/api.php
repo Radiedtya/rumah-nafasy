@@ -49,41 +49,48 @@ Route::prefix('v1')->group(function () {
 
     // ============================================
     // PASIEN ROUTES (auth + role:pasien)
+    // Alur bisnis baru: booking langsung TANPA pembayaran.
+    // Pembayaran P2P dilakukan ke psikolog setelah sesi selesai —
+    // tidak diproses aplikasi.
     // ============================================
     Route::middleware(['auth:sanctum', 'role:pasien'])->prefix('pasien')->group(function () {
-        // Orders
-        Route::get('/orders', [OrderController::class, 'index']);
-        Route::post('/orders', [OrderController::class, 'store']);
-        Route::get('/orders/{order}', [OrderController::class, 'show']);
-        Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
-
-        // Payment
-        Route::post('/orders/{order}/payment', [PaymentController::class, 'create']);
-        Route::get('/payments/{payment}', [PaymentController::class, 'show']);
-
-        // Simulasi pembayaran (dev tanpa Midtrans keys; auth + pemilik order)
-        Route::post('/orders/{order}/mock-success', [PaymentController::class, 'mockSuccess'])
-            ->middleware('throttle:10,1');
-
-        // Available slots (check before booking)
-        Route::get('/psikolog/{psikologId}/slots', [BookingController::class, 'availableSlots']);
-
-        // Bookings
-        Route::post('/orders/{order}/schedule', [BookingController::class, 'store']);
+        // Booking langsung (pilih psikolog → paket → jadwal → selesai)
         Route::get('/bookings', [BookingController::class, 'index']);
         Route::get('/bookings/{booking}', [BookingController::class, 'show']);
+        Route::post('/bookings', [BookingController::class, 'storeDirect'])
+            ->middleware('throttle:10,1');
         Route::put('/bookings/{booking}/reschedule', [BookingController::class, 'reschedule']);
         Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel']);
+
+        // Available slots (cek sebelum booking)
+        Route::get('/psikolog/{psikologId}/slots', [BookingController::class, 'availableSlots']);
+
+        /*
+        | ── DORMAN: Alur order + pembayaran ─────────────────────────
+        | Dimatikan sesuai keputusan klien (pembayaran P2P di luar app).
+        | Kode controller/model/service TIDAK dihapus — bisa diaktifkan
+        | kembali dengan membuka komentar blok ini.
+        |
+        | Route::get('/orders', [OrderController::class, 'index']);
+        | Route::post('/orders', [OrderController::class, 'store']);
+        | Route::get('/orders/{order}', [OrderController::class, 'show']);
+        | Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+        | Route::post('/orders/{order}/payment', [PaymentController::class, 'create']);
+        | Route::get('/payments/{payment}', [PaymentController::class, 'show']);
+        | Route::post('/orders/{order}/mock-success', [PaymentController::class, 'mockSuccess']);
+        | Route::post('/orders/{order}/schedule', [BookingController::class, 'store']);
+        */
     });
 
-    // ============================================
-    // WEBHOOK ROUTES (no auth — diverifikasi tanda tangan Midtrans;
-    // dibatasi rate untuk menahan abuse endpoint publik)
-    // ============================================
-    Route::prefix('webhooks')->group(function () {
-        Route::post('/midtrans', [MidtransController::class, 'handle'])
-            ->middleware('throttle:20,1');
-    });
+    /*
+    | ── DORMAN: Webhook Midtrans ─────────────────────────────────
+    | Dipakai hanya oleh alur pembayaran yang sedang dorman.
+    |
+    | Route::prefix('webhooks')->group(function () {
+    |     Route::post('/midtrans', [MidtransController::class, 'handle'])
+    |         ->middleware('throttle:20,1');
+    | });
+    */
 
     // ============================================
     // PSIKOLOG ROUTES (auth + role:psikolog)

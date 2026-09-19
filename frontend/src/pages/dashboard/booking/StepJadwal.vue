@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiFetch } from '../../../lib/api'
 import { useBookingStore } from '../../../stores/booking'
@@ -10,18 +10,7 @@ const store = useBookingStore()
 
 const isSubmitting = ref(false)
 const error = ref('')
-
-const order = computed(() => store.order)
-const canConfirm = computed(() => !!store.selectedSlot && !isSubmitting.value)
-
-// Order belum ada (refresh langsung ke sini) → kembali ke langkah 1
-if (!order.value) {
-  router.replace(
-    store.psikolog?.slug
-      ? `/dashboard/booking/${store.psikolog.slug}`
-      : '/dashboard/psikolog',
-  )
-}
+const canConfirm = ref(false)
 
 const today = new Date()
 today.setDate(today.getDate() + 1)
@@ -37,9 +26,8 @@ async function fetchSlots() {
   error.value = ''
 
   try {
-    const durMinutes = store.selectedDuration?.minutes || 60
     const res = await apiFetch(
-      `pasien/psikolog/${store.psikolog.id}/slots?date=${store.bookingDate}&duration_minutes=${durMinutes}`,
+      `pasien/psikolog/${store.psikolog.id}/slots?date=${store.bookingDate}&duration_minutes=${store.durationMinutes}`,
     )
     store.slots = res.data?.available_slots || []
     if (store.slots.length > 0) {
@@ -52,17 +40,28 @@ async function fetchSlots() {
   }
 }
 
-// Muat slot saat masuk halaman; muat ulang saat tanggal berubah
 watch(
   () => store.psikolog?.id,
   (id) => {
-    if (id && order.value) fetchSlots()
+    if (id) fetchSlots()
   },
   { immediate: true },
 )
 
-async function confirmSchedule() {
-  if (!store.selectedSlot) {
+watch(
+  () => store.selectedSlot,
+  (slot) => {
+    canConfirm.value = !!slot
+  },
+)
+
+onMounted(() => {
+  // Durasi/tanggal berubah sejak langkah 1 → refresh slot
+  fetchSlots()
+})
+
+async function submitBooking() {
+  if (!store.selectedSlot || !store.psikolog) {
     error.value = 'Silakan pilih slot waktu terlebih dahulu'
     return
   }
@@ -71,17 +70,21 @@ async function confirmSchedule() {
   error.value = ''
 
   try {
-    const res = await apiFetch(`pasien/orders/${order.value.id}/schedule`, {
+    const res = await apiFetch('pasien/bookings', {
       method: 'POST',
       body: JSON.stringify({
+        psikolog_id: store.psikolog.id,
+        consultation_type: store.consultationType,
+        duration_minutes: store.durationMinutes,
         booking_date: store.bookingDate,
         start_time: store.selectedSlot.start_time,
+        note: store.note || null,
       }),
     })
     store.confirmedBooking = res.data
     router.push(`/dashboard/booking/${store.psikolog.slug}/selesai`)
   } catch (err: any) {
-    error.value = err.message || 'Gagal memilih jadwal'
+    error.value = err.message || 'Gagal mengirim pengajuan'
   } finally {
     isSubmitting.value = false
   }
@@ -107,7 +110,7 @@ async function confirmSchedule() {
     <section>
       <h2 class="text-sm font-semibold text-[var(--text)]">Slot Waktu Tersedia</h2>
       <p class="mt-0.5 text-xs text-[var(--muted)]">
-        Slot menyesuaikan jadwal praktek psikolog dan durasi {{ store.selectedDuration?.name ?? 'sesi' }}.
+        Slot menyesuaikan jadwal praktek psikolog dan durasi {{ store.durationMinutes }} menit.
       </p>
 
       <div v-if="store.loadingSlots" class="mt-3 grid gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
@@ -140,9 +143,16 @@ async function confirmSchedule() {
       </div>
     </section>
 
+    <!-- Info proses -->
+    <section class="rounded-xl bg-sky-500/8 px-4 py-3.5 text-xs leading-relaxed text-sky-700 dark:text-sky-400">
+      Setelah Anda kirim, pengajuan berstatus <strong>menunggu persetujuan psikolog</strong>.
+      Slot akan ditahan untuk Anda dan notifikasi WhatsApp dikirim ke psikolog.
+      Anda akan diberi tahu saat pengajuan disetujui.
+    </section>
+
     <div class="flex items-center justify-end rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
-      <BaseButton size="md" :disabled="!canConfirm" @click="confirmSchedule">
-        {{ isSubmitting ? 'Memproses Reservasi…' : 'Konfirmasi Jadwal Konsultasi' }}
+      <BaseButton size="md" :disabled="!canConfirm || isSubmitting" @click="submitBooking">
+        {{ isSubmitting ? 'Mengirim Pengajuan…' : 'Kirim Pengajuan Jadwal' }}
       </BaseButton>
     </div>
   </div>
