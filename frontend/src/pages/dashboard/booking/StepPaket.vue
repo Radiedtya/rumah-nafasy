@@ -7,12 +7,10 @@ import {
   ArrowRightIcon,
 } from '@heroicons/vue/24/outline'
 import { apiFetch } from '../../../lib/api'
-import { useAuthStore } from '../../../stores/auth'
 import { useBookingStore, formatRupiah } from '../../../stores/booking'
 import BaseButton from '../../../components/ui/BaseButton.vue'
 
 const router = useRouter()
-const auth = useAuthStore()
 const store = useBookingStore()
 
 const isSubmitting = ref(false)
@@ -22,10 +20,6 @@ const canProceed = computed(() => !!store.selectedCategory && !!store.selectedDu
 
 async function proceedToPayment() {
   if (!canProceed.value || !store.psikolog) return
-
-  if (!auth.isAuthenticated) {
-    await auth.login('rina@example.com', 'password').catch(() => {})
-  }
 
   isSubmitting.value = true
   error.value = ''

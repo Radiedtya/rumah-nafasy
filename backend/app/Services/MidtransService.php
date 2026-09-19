@@ -26,11 +26,14 @@ class MidtransService
      */
     public function createSnapTransaction(Order $order): array
     {
-        // Mock mode for development (no Midtrans keys)
+        // Mode mock untuk development tanpa Midtrans keys.
+        // URL mengarah ke halaman pembayaran frontend (bukan webhook!);
+        // simulasi hanya bisa dipicu pemilik order via endpoint mockSuccess.
         if (!config('midtrans.is_configured')) {
+            $appUrl = rtrim(config('app.frontend_url', config('app.url', 'http://localhost:5173')), '/');
             return [
                 'token' => 'mock-' . Str::random(16),
-                'redirect_url' => 'http://localhost:8000/api/v1/webhooks/midtrans?mock=1&order_id=' . $order->order_number,
+                'redirect_url' => $appUrl . '/dashboard/booking/payment/' . $order->order_number,
                 'is_mock' => true,
             ];
         }
