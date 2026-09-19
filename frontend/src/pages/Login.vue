@@ -48,8 +48,10 @@ async function handleLogin() {
   errors.value = {}
   try {
     await auth.login(email.value.trim(), password.value)
-    // Kembali ke halaman yang dituju sebelum diarahkan ke login (mis. wizard booking)
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
+    // Kembali ke halaman yang dituju sebelum diarahkan ke login (mis. wizard booking).
+    // Hanya izinkan path internal — blokir open redirect ke domain luar.
+    const raw = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
+    const redirect = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') ? raw : '/dashboard'
     router.push(redirect)
   } catch (err: any) {
     if (err.errors) {

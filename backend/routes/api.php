@@ -19,8 +19,11 @@ Route::prefix('v1')->group(function () {
     // AUTH ROUTES
     // ============================================
     Route::prefix('auth')->group(function () {
-        Route::post('/register', [RegisterController::class, 'register']);
-        Route::post('/login', [LoginController::class, 'login']);
+        // Rate limit ketat di endpoint publik — penahan brute-force
+        Route::post('/register', [RegisterController::class, 'register'])
+            ->middleware('throttle:5,1');
+        Route::post('/login', [LoginController::class, 'login'])
+            ->middleware('throttle:5,1');
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);
@@ -34,7 +37,7 @@ Route::prefix('v1')->group(function () {
     // ============================================
     // PUBLIC ROUTES (no auth)
     // ============================================
-    Route::prefix('public')->group(function () {
+    Route::prefix('public')->middleware('throttle:60,1')->group(function () {
         Route::get('/psikolog', [Public\PsikologController::class, 'index']);
         Route::get('/psikolog/{slug}', [Public\PsikologController::class, 'show']);
         Route::get('/psikolog/{slug}/reviews', [Public\ReviewController::class, 'index']);
@@ -58,6 +61,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/orders/{order}/payment', [PaymentController::class, 'create']);
         Route::get('/payments/{payment}', [PaymentController::class, 'show']);
 
+        // Simulasi pembayaran (dev tanpa Midtrans keys; auth + pemilik order)
+        Route::post('/orders/{order}/mock-success', [PaymentController::class, 'mockSuccess'])
+            ->middleware('throttle:10,1');
+
         // Available slots (check before booking)
         Route::get('/psikolog/{psikologId}/slots', [BookingController::class, 'availableSlots']);
 
@@ -70,11 +77,12 @@ Route::prefix('v1')->group(function () {
     });
 
     // ============================================
-    // WEBHOOK ROUTES (no auth)
+    // WEBHOOK ROUTES (no auth — diverifikasi tanda tangan Midtrans;
+    // dibatasi rate untuk menahan abuse endpoint publik)
     // ============================================
     Route::prefix('webhooks')->group(function () {
-        Route::post('/midtrans', [MidtransController::class, 'handle']);
-        Route::get('/midtrans', [MidtransController::class, 'handle']);
+        Route::post('/midtrans', [MidtransController::class, 'handle'])
+            ->middleware('throttle:20,1');
     });
 
     // ============================================

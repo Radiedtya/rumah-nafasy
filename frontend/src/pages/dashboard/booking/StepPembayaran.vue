@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRightIcon } from '@heroicons/vue/24/outline'
+import { ArrowRightIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
 import { apiFetch } from '../../../lib/api'
 import { useBookingStore, formatRupiah } from '../../../stores/booking'
 import BaseButton from '../../../components/ui/BaseButton.vue'
@@ -25,19 +25,53 @@ if (!order.value) {
   )
 }
 
-async function confirmPaymentMock() {
+/**
+ * Lanjut ke pembayaran.
+ * Backend mengembalikan `snap_url` (hosted payment Midtrans).
+ * Jika gateway belum dikonfigurasi, respons berisi `is_mock: true` —
+ * UI simulasi hanya muncul kalau backend yang menyatakan mock.
+ */
+onMounted(async () => {
+  if (!canPay.value) return
+  try {
+    const res = await apiFetch<{
+      payment: { status: string; payment_url: string | null }
+      snap_url: string
+      is_mock?: boolean
+    }>(`pasien/orders/${order.value.id}/payment`, { method: 'POST' })
+    store.payment = res.data.payment
+    store.snapUrl = res.data.snap_url
+    store.isMockPayment = res.data.is_mock === true
+  } catch (err: any) {
+    error.value = err.message || 'Gagal menyiapkan pembayaran'
+  }
+})
+
+async function confirmMockPayment() {
   if (!order.value) return
   isSubmitting.value = true
   error.value = ''
   try {
-    await apiFetch(`webhooks/midtrans?mock=1&order_id=${order.value.order_number}`)
-    store.paymentConfirmed = true
-    router.push(`/dashboard/booking/${store.psikolog.slug}/jadwal`)
+    // Endpoint simulasi resmi: auth + hanya pemilik order + hanya saat gateway nonaktif
+    await apiFetch(`pasien/orders/${order.value.id}/mock-success`, { method: 'POST' })
+    // Sinkronkan status terbaru dari server (sumber kebenaran), bukan asumsi lokal
+    const res = await apiFetch(`pasien/orders/${order.value.id}`)
+    store.order = res.data
+    store.paymentConfirmed = res.data?.status === 'paid'
+    if (store.paymentConfirmed) {
+      router.push(`/dashboard/booking/${store.psikolog.slug}/jadwal`)
+    }
   } catch (err: any) {
-    error.value = err.message || 'Gagal konfirmasi pembayaran'
+    error.value = err.message || 'Gagal mengonfirmasi pembayaran'
   } finally {
     isSubmitting.value = false
   }
+}
+
+async function goToSnapPayment() {
+  if (!store.snapUrl) return
+  // Hosted payment page — jangan dibuka di tab yang sama agar wizard tidak mati
+  window.open(store.snapUrl, '_blank', 'noopener')
 }
 </script>
 
@@ -76,19 +110,42 @@ async function confirmPaymentMock() {
     </section>
 
     <template v-if="!store.paymentConfirmed">
-      <section class="rounded-xl border border-dashed border-[var(--line)] bg-[var(--muted)]/5 p-5">
+      <!-- Pembayaran nyata via Midtrans Snap -->
+      <section v-if="!store.isMockPayment" class="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5">
+        <h3 class="text-sm font-semibold text-[var(--text)]">Metode Pembayaran</h3>
+        <div class="mt-2 flex items-start gap-2.5 rounded-lg bg-[var(--muted)]/6 p-3">
+          <ShieldCheckIcon class="mt-0.5 h-4.5 w-4.5 shrink-0 text-[var(--accent)]" />
+          <p class="text-xs leading-relaxed text-[var(--muted)]">
+            Anda akan diarahkan ke halaman pembayaran aman <strong class="text-[var(--text)]">Midtrans</strong>
+            (virtual account, e-wallet, kartu, dll). Halaman wizard ini jangan ditutup —
+            kembali ke sini setelah pembayaran selesai.
+          </p>
+        </div>
+        <BaseButton
+          variant="success"
+          size="md"
+          class="mt-4 w-full"
+          :disabled="isSubmitting || !store.snapUrl"
+          @click="goToSnapPayment"
+        >
+          {{ isSubmitting ? 'Menyiapkan…' : 'Bayar via Midtrans' }}
+        </BaseButton>
+      </section>
+
+      <!-- Simulasi — hanya jika backend menyatakan mode mock (gateway belum dikonfigurasi) -->
+      <section v-else class="rounded-xl border border-dashed border-[var(--line)] bg-[var(--muted)]/5 p-5">
         <h3 class="text-sm font-semibold text-[var(--text)]">Metode Pembayaran</h3>
         <p class="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">
-          Di lingkungan development ini, gateway Midtrans berjalan dalam mode sandbox. Anda dapat langsung
-          melakukan <strong class="text-[var(--text)]">simulasi pembayaran berhasil</strong> yang terhubung ke
-          webhook backend Laravel.
+          Gateway pembayaran belum aktif di server ini. Tombol di bawah menjalankan
+          <strong class="text-[var(--text)]">simulasi pembayaran</strong> melalui endpoint khusus
+          yang hanya tersedia saat Midtrans tidak dikonfigurasi.
         </p>
         <BaseButton
           variant="success"
           size="md"
           class="mt-4 w-full"
           :disabled="isSubmitting || !canPay"
-          @click="confirmPaymentMock"
+          @click="confirmMockPayment"
         >
           {{ isSubmitting ? 'Menyinkronkan…' : 'Konfirmasi & Selesaikan Pembayaran (Simulasi)' }}
         </BaseButton>

@@ -33,6 +33,10 @@ export const useBookingStore = defineStore('booking', () => {
   const order = ref<any>(null)
   const payment = ref<any>(null)
   const paymentConfirmed = ref(false)
+  /** URL halaman pembayaran Midtrans Snap dari endpoint resmi backend. */
+  const snapUrl = ref('')
+  /** true hanya jika backend melaporkan gateway belum dikonfigurasi. */
+  const isMockPayment = ref(false)
 
   // ── Jadwal (langkah 3) ────────────────────────────────────────────────────
   const bookingDate = ref('')
@@ -61,6 +65,8 @@ export const useBookingStore = defineStore('booking', () => {
     order.value = null
     payment.value = null
     paymentConfirmed.value = false
+    snapUrl.value = ''
+    isMockPayment.value = false
     bookingDate.value = ''
     slots.value = []
     selectedSlot.value = null
@@ -90,6 +96,8 @@ export const useBookingStore = defineStore('booking', () => {
     order,
     payment,
     paymentConfirmed,
+    snapUrl,
+    isMockPayment,
     bookingDate,
     slots,
     loadingSlots,

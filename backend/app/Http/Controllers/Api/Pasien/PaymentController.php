@@ -7,6 +7,8 @@ use App\Http\Resources\PaymentResource;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\MidtransService;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -80,18 +82,58 @@ class PaymentController extends Controller
     }
 
     /**
-     * Mock payment success (for development only — no Midtrans keys).
+     * Simulasi pembayaran berhasil — DEVELOPMENT ONLY.
+     *
+     * Hanya bisa dipicu oleh PEMILIK order yang sedang login, dan hanya
+     * aktif saat Midtrans TIDAK dikonfigurasi. Di produksi (keys terisi)
+     * endpoint ini selalu ditolak 403. Tidak ada lagi endpoint publik
+     * untuk menandai order lunas.
      */
     public function mockSuccess(Request $request, Order $order)
     {
-        if (!config('midtrans.is_configured')) {
-            return $this->errorResponse('Fitur ini hanya untuk development tanpa Midtrans keys', 403);
+        if (config('midtrans.is_configured')) {
+            return $this->errorResponse('Endpoint simulasi tidak tersedia', 403);
         }
 
         if ($order->pasien_id !== $request->user()->id) {
             return $this->errorResponse('Anda tidak memiliki akses', 403);
         }
 
-        return $this->errorResponse('Mock endpoint hanya tersedia saat Midtrans tidak dikonfigurasi', 403);
+        if (!$order->isPendingPayment()) {
+            return $this->errorResponse('Pesanan tidak dapat dibayar (status: ' . $order->status . ')', 422);
+        }
+
+        $payment = Payment::where('order_id', $order->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($payment) {
+            $payment->update([
+                'status' => 'success',
+                'payment_channel' => 'mock',
+                'transaction_id' => 'mock-' . uniqid(),
+                'paid_at' => now(),
+                'payload' => array_merge($payment->payload ?? [], ['mock_notification' => true]),
+            ]);
+        }
+
+        $order->update([
+            'status' => 'paid',
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        app(FonnteService::class)->notifyUser(
+            $order->pasien,
+            WhatsAppMessages::paymentSuccessPasien($order)
+        );
+        app(FonnteService::class)->notifyUser(
+            $order->psikolog,
+            WhatsAppMessages::paymentSuccessPsikolog($order)
+        );
+
+        return $this->successResponse([
+            'order_number' => $order->order_number,
+            'status' => 'paid',
+        ], 'Pembayaran simulasi berhasil');
     }
 }

@@ -62,23 +62,75 @@ async function loadDetail() {
   }
 }
 
+/**
+ * Resume sesi pembayaran (mis. kembali dari halaman Midtrans via
+ * /dashboard/booking/payment/{order_number} yang diarahkan ke sini).
+ * Endpoint pembayaran bersifat idempotent untuk order pending.
+ */
+async function resumePayment(orderId: string) {
+  try {
+    const payRes = await apiFetch<{
+      payment: { status: string }
+      snap_url: string
+      is_mock?: boolean
+    }>(`pasien/orders/${orderId}/payment`, { method: 'POST' })
+    store.payment = payRes.data.payment
+    store.snapUrl = payRes.data.snap_url
+    store.isMockPayment = payRes.data.is_mock === true
+
+    const orderRes = await apiFetch(`pasien/orders/${orderId}`)
+    store.order = orderRes.data
+    store.paymentConfirmed = orderRes.data?.status === 'paid'
+  } catch {
+    // Order tidak ditemukan / bukan milik user — biarkan wizard mulai dari awal
+  }
+}
+
 watch(slug, () => {
   if (slug.value) loadDetail()
 })
 
-onMounted(async () => {
-  // Wizard butuh sesi login. Beri jeda untuk auto-login dev di DashboardLayout
-  // (child onMounted berjalan lebih dulu daripada parent).
-  if (!auth.isAuthenticated) {
-    const started = Date.now()
-    while (!auth.isAuthenticated && Date.now() - started < 2000) {
-      await new Promise((r) => setTimeout(r, 100))
+// ── Gate urutan langkah wizard ──────────────────────────────────────────────
+// Tidak boleh loncat ke Jadwal/Selesai sebelum order terbayar.
+watch(
+  [step, booted],
+  ([s, ready]) => {
+    if (!ready || notFound.value) return
+    const paid = store.paymentConfirmed || store.order?.status === 'paid'
+    if (s >= 3 && !paid) {
+      router.replace(
+        store.psikolog?.slug
+          ? `/dashboard/booking/${store.psikolog.slug}/pembayaran`
+          : `/dashboard/booking/${slug.value}/pembayaran`,
+      )
+    } else if (s === 2 && !store.order && !route.query.order) {
+      router.replace(`/dashboard/booking/${slug.value}`)
     }
-    if (!auth.isAuthenticated) {
+  },
+  { immediate: false },
+)
+
+onMounted(async () => {
+  // Gate sesi: tanpa token → login. (Guard router sudah menjalankan ini,
+  // ini lapisan kedua untuk akses langsung via URL.)
+  if (!auth.token) {
+    router.replace({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  if (!auth.user) {
+    await auth.fetchMe()
+    if (!auth.user) {
       router.replace({ path: '/login', query: { redirect: route.fullPath } })
       return
     }
   }
+
+  // Resume pembayaran jika kembali dari payment gateway (?order=<id>)
+  const orderId = route.query.order
+  if (orderId && !store.order) {
+    await resumePayment(String(orderId))
+  }
+
   await loadCatalog()
   await loadDetail()
   booted.value = true

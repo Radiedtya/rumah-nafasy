@@ -17,7 +17,6 @@ import {
 import SidebarPanelIcon from '../components/icons/SidebarPanelIcon.vue'
 import { useTheme } from '../composables/theme'
 import { useAuthStore } from '../stores/auth'
-import QuickRoleSwitcher from '../components/ui/QuickRoleSwitcher.vue'
 import SidebarNav from '../components/dashboard/SidebarNav.vue'
 import UserMenu from '../components/dashboard/UserMenu.vue'
 
@@ -48,16 +47,11 @@ watch(
 /* ---------- Theme (composable bersama) ---------- */
 const { resolvedMode, setMode } = useTheme()
 
-/* ---------- Auth bootstrap (dipertahankan dari layout lama) ---------- */
+/* ---------- Auth bootstrap ---------- */
 onMounted(async () => {
-  if (auth.token && !auth.user) {
+  // Sesi valid → refresh profil dari server. Tidak ada auto-login dev.
+  if (auth.token) {
     await auth.fetchMe()
-  } else if (!auth.token) {
-    try {
-      await auth.login('rina@example.com', 'password')
-    } catch {
-      // ignore
-    }
   }
 })
 
@@ -211,7 +205,6 @@ const currentSection = computed(() =>
             <MoonIcon v-else class="h-4.5 w-4.5" />
           </button>
 
-          <QuickRoleSwitcher />
         </div>
       </header>
 
