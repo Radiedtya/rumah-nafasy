@@ -1,9 +1,123 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import type { UserProfile } from '../stores/auth'
+import { apiFetch } from '../lib/api'
 import { ArrowRightIcon } from '@heroicons/vue/20/solid'
 import { useTheme } from '../composables/theme'
+import { googleAuthUrl } from '../lib/config'
+
+// ── Login Google via POPUP (pola GitHub/Vercel) ─────────────────────────────
+
+const POPUP_W = 480
+const POPUP_H = 640
+
+const googlePopup = ref<Window | null>(null)
+let popupWatch: number | undefined
+
+/** Pusat popup di atas jendela induk. */
+function popupCenterSpec(): string {
+  const dualLeft = window.screenLeft ?? window.screenX
+  const dualTop = window.screenTop ?? window.screenY
+  const w = window.innerWidth || document.documentElement.clientWidth || screen.width
+  const h = window.innerHeight || document.documentElement.clientHeight || screen.height
+  const left = Math.max(0, Math.round(dualLeft + (w - POPUP_W) / 2))
+  const top = Math.max(0, Math.round(dualTop + (h - POPUP_H) / 2.5))
+  return `popup=yes,width=${POPUP_W},height=${POPUP_H},left=${left},top=${top},scrollbars=yes,status=no`
+}
+
+function handleGoogleLogin() {
+  errors.value = {}
+
+  // Landing popup — popup meneruskan kode ke jendela ini via postMessage
+  const landing = `${window.location.origin}/auth/google/callback?popup=1`
+
+  googlePopup.value = window.open(
+    googleAuthUrl(landing),
+    'google_oauth',
+    popupCenterSpec(),
+  )
+
+  // Popup diblokir browser → fallback redirect penuh (tetap aman)
+  if (!googlePopup.value) {
+    errors.value = { form: 'Popup diblokir browser — melanjutkan lewat tab…' }
+    window.location.href = googleAuthUrl(landing)
+    return
+  }
+
+  window.addEventListener('message', onGoogleMessage)
+  // Jika popup ditutup tanpa menyelesaikan login → bersihkan state
+  popupWatch = window.setInterval(() => {
+    if (googlePopup.value?.closed) {
+      cleanupPopup()
+      isLoading.value = false
+    }
+  }, 500)
+}
+
+/**
+ * Terima kode dari popup. Keamanan berlapis:
+ * 1. event.origin HARUS origin kita sendiri (popup sibling same-origin)
+ * 2. event.source HARUS window popup yang KITA buka (bukan iframe/stranger)
+ * 3. payload harus bertipe 'google-oauth' — bukan pesan lain
+ */
+function onGoogleMessage(event: MessageEvent) {
+  if (event.origin !== window.location.origin) return
+  // Untuk popup, event.source ADALAH referensi jendela popup — pastikan
+  // pesan datang dari popup yang KITA buka (bukan iframe/stranger window).
+  if (event.source !== googlePopup.value) return
+  const data = event.data as { type?: string; code?: string; error?: string } | null
+  if (!data || data.type !== 'google-oauth') return
+
+  cleanupPopup()
+  googlePopup.value?.close()
+
+  if (data.error === 'blocked') {
+    errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
+    return
+  }
+  if (data.error) {
+    errors.value = { form: 'Login Google gagal — coba lagi.' }
+    return
+  }
+  if (data.code) {
+    void completeGoogleLogin(data.code)
+  }
+}
+
+async function completeGoogleLogin(code: string) {
+  isLoading.value = true
+  try {
+    const res = await apiFetch<{ user: UserProfile; token: string }>('auth/google/exchange', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    })
+    auth.setSession(res.data.token, res.data.user)
+
+    // Kembali ke halaman tujuan semula (query redirect) — anti open-redirect
+    const raw = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
+    const redirect = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') ? raw : '/dashboard'
+    router.push(redirect)
+  } catch (err: any) {
+    errors.value = { form: err.message || 'Gagal menyelesaikan login Google.' }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function cleanupPopup() {
+  window.removeEventListener('message', onGoogleMessage)
+  if (popupWatch) {
+    window.clearInterval(popupWatch)
+    popupWatch = undefined
+  }
+}
+
+onBeforeUnmount(() => {
+  cleanupPopup()
+  googlePopup.value?.close()
+})
 
 const router = useRouter()
 const route = useRoute()
@@ -14,6 +128,15 @@ const email = ref('')
 const password = ref('')
 const errors = ref<{ email?: string; password?: string; form?: string }>({})
 const isLoading = ref(false)
+
+// Balikan gagal dari callback Google (backend redirect → /login?google=…)
+onMounted(() => {
+  if (route.query.google === 'blocked') {
+    errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
+  } else if (route.query.google === 'error') {
+    errors.value = { form: 'Login Google gagal — akun Google tidak memberikan email atau terjadi kesalahan.' }
+  }
+})
 
 // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -84,8 +207,13 @@ async function handleLogin() {
           <p>Masuk untuk melanjutkan perjalanan kesehatan mental Anda.</p>
         </div>
 
-        <!-- Google (placeholder — belum terhubung) -->
-        <button type="button" class="google-button" disabled aria-label="Masuk dengan Google (segera hadir)">
+        <!-- Google OAuth — backend-driven redirect flow -->
+        <button
+          type="button"
+          class="google-button google-button--active"
+          aria-label="Masuk dengan Google"
+          @click="handleGoogleLogin"
+        >
           <svg class="google-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -284,9 +412,9 @@ async function handleLogin() {
   font: inherit;
   font-size: 14px;
   font-weight: 600;
-  cursor: not-allowed;
-  opacity: 0.5;
 }
+.google-button--active { cursor: pointer; opacity: 1; transition: background 160ms; }
+.google-button--active:hover { background: color-mix(in srgb, var(--border) 30%, var(--bg)); }
 .google-icon { width: 18px; height: 18px; flex-shrink: 0; }
 
 /* ── Divider ────────────────────────────────────────────────────────── */
