@@ -20,7 +20,7 @@ export function formatRupiah(num: number | null | undefined) {
   }).format(num ?? 0)
 }
 
-/** State wizard booking 3 langkah (Paket → Jadwal → Selesai). */
+/** State wizard booking 4 langkah (Paket → Keluhan → Jadwal → Selesai). */
 export const useBookingStore = defineStore('booking', () => {
   // ── Detail psikolog yang dibooking ────────────────────────────────────────
   const psikolog = ref<any>(null)
@@ -32,7 +32,10 @@ export const useBookingStore = defineStore('booking', () => {
   const consultationType = ref<ConsultationType>('video')
   /** Durasi menit: preset 30/60/90 atau permintaan khusus (15–240). */
   const durationMinutes = ref<number>(60)
-  const note = ref('')
+
+  // ── Keluhan & catatan (langkah 2, format Markdown) ───────────────────
+  /** Keluhan pasien untuk psikolog — Markdown mentah, dirender di frontend. */
+  const complaint = ref('')
 
   // ── Kategori klien (harga = acuan budget, bukan tagihan aplikasi) ─────
   const categories = ref<any[]>([])
@@ -69,7 +72,7 @@ export const useBookingStore = defineStore('booking', () => {
     loadingDetail.value = true
     consultationType.value = 'video'
     durationMinutes.value = 60
-    note.value = ''
+    complaint.value = ''
     requestedCategory.value = null
     bookingDate.value = ''
     slots.value = []
@@ -90,7 +93,7 @@ export const useBookingStore = defineStore('booking', () => {
     loadedForSlug,
     consultationType,
     durationMinutes,
-    note,
+    complaint,
     categories,
     requestedCategory,
     bookingDate,

@@ -6,6 +6,7 @@ import {
   PlusIcon,
   TrashIcon,
   CheckCircleIcon,
+  DocumentTextIcon,
 } from '@heroicons/vue/24/outline'
 import PageHeader from '../../components/dashboard/PageHeader.vue'
 import BaseButton from '../../components/ui/BaseButton.vue'
@@ -216,6 +217,13 @@ async function deleteSchedule(id: number) {
             </p>
             <p class="mt-0.5 text-[11px] tabular-nums text-[var(--muted)]">
               {{ formatRequestDate(req.booking_date) }} · {{ req.start_time }}–{{ req.end_time }} WIB
+            </p>
+            <p
+              v-if="req.complaint_markdown"
+              class="mt-1.5 flex items-start gap-1.5 rounded-lg bg-[var(--muted)]/6 px-2.5 py-1.5 text-[11px] italic text-[var(--muted)]"
+            >
+              <DocumentTextIcon class="mt-0.5 h-3 w-3 shrink-0 text-[var(--accent)]" />
+              <span class="min-w-0 flex-1 truncate">Keluhan: “{{ req.complaint_markdown.replace(/[#*`>\-_]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) }}…”</span>
             </p>
           </div>
 

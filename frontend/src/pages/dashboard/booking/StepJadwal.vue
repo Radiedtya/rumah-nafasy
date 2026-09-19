@@ -247,7 +247,8 @@ async function submitBooking() {
         requested_category_id: store.requestedCategory?.id ?? null,
         booking_date: store.bookingDate,
         start_time: store.selectedSlot.start_time,
-        note: store.note || null,
+        note: null,
+        complaint_markdown: store.complaint || null,
       }),
     })
     store.confirmedBooking = res.data

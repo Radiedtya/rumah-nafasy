@@ -17,9 +17,10 @@ const slug = computed(() => route.params.slug as string)
 const notFound = ref(false)
 const booted = ref(false)
 
-function currentStep(): 1 | 2 | 3 {
-  if (route.path.endsWith('/jadwal')) return 2
-  if (route.path.endsWith('/selesai')) return 3
+function currentStep(): 1 | 2 | 3 | 4 {
+  if (route.path.endsWith('/keluhan')) return 2
+  if (route.path.endsWith('/jadwal')) return 3
+  if (route.path.endsWith('/selesai')) return 4
   return 1
 }
 const step = computed(() => currentStep())
@@ -63,7 +64,7 @@ watch(
   [step, booted],
   ([s, ready]) => {
     if (!ready || notFound.value) return
-    if (s === 3 && !store.confirmedBooking) {
+    if (s === 4 && !store.confirmedBooking) {
       router.replace(`/dashboard/booking/${slug.value}/jadwal`)
     }
   },

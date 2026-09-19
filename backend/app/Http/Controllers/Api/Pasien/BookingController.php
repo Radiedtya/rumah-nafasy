@@ -132,6 +132,7 @@ class BookingController extends Controller
                 'end_time' => $endTime,
                 'room_id' => $request->consultation_type === 'video' ? 'room-' . Str::uuid()->toString() : null,
                 'status' => 'pending_psikolog',
+                'complaint_markdown' => $request->complaint_markdown, // keluhan Markdown dari langkah 2
             ]);
         });
 
@@ -230,7 +231,7 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $query = Booking::where('pasien_id', $request->user()->id)
-            ->with(['order.category', 'order.duration', 'psikolog.psikologProfile', 'consultation']);
+            ->with(['order.category', 'order.duration', 'requestedCategory', 'psikolog.psikologProfile', 'consultation']);
 
         // Filter by status
         if ($request->filled('status')) {

@@ -3,7 +3,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { CheckIcon } from '@heroicons/vue/24/outline'
 
 interface Props {
-  current: 1 | 2 | 3
+  current: 1 | 2 | 3 | 4
   clickable?: boolean
 }
 
@@ -14,11 +14,12 @@ const slug = route.params.slug as string
 
 const steps = [
   { step: 1, label: 'Paket' },
-  { step: 2, label: 'Jadwal' },
-  { step: 3, label: 'Selesai' },
+  { step: 2, label: 'Keluhan' },
+  { step: 3, label: 'Jadwal' },
+  { step: 4, label: 'Selesai' },
 ] as const
 
-const SUFFIXES = ['', '/jadwal', '/selesai'] as const
+const SUFFIXES = ['', '/keluhan', '/jadwal', '/selesai'] as const
 
 function stepTo(step: number) {
   return `/dashboard/booking/${slug}${SUFFIXES[step - 1]}`
@@ -64,7 +65,7 @@ function isClickable(step: number) {
       <!-- Connector -->
       <span
         v-if="i < steps.length - 1"
-        class="h-px w-5 shrink-0 sm:w-10"
+        class="h-px w-4 shrink-0 sm:w-7"
         :class="s.step < current ? 'bg-[var(--accent)]' : 'bg-[var(--line)]'"
       />
     </li>

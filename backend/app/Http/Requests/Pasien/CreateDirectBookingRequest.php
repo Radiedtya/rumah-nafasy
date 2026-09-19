@@ -22,6 +22,8 @@ class CreateDirectBookingRequest extends FormRequest
             'booking_date' => ['required', 'date', 'after_or_equal:today'],
             'start_time' => ['required', 'date_format:H:i'],
             'note' => ['nullable', 'string', 'max:500'],
+            // Keluhan & catatan pasien format Markdown (langkah terpisah di wizard)
+            'complaint_markdown' => ['nullable', 'string', 'max:10000'],
         ];
     }
 
@@ -40,6 +42,7 @@ class CreateDirectBookingRequest extends FormRequest
             'start_time.required' => 'Jam konsultasi wajib dipilih',
             'start_time.date_format' => 'Format jam tidak valid (HH:MM)',
             'note.max' => 'Catatan maksimal 500 karakter',
+            'complaint_markdown.max' => 'Keluhan maksimal 10000 karakter',
         ];
     }
 }
