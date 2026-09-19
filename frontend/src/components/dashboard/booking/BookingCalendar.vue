@@ -1,206 +1,276 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import {
-  DateFormatter,
-  parseDate,
-  today,
-  getLocalTimeZone,
-  type DateValue,
-} from '@internationalized/date'
-import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { computed, onMounted, ref, watch } from 'vue'
+import { CalendarDate, DateFormatter, getLocalTimeZone, today } from '@internationalized/date'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 
 /**
- * Kalender pilih tanggal sesi — UI custom (bukan input date bawaan HTML).
- * Dibangun di atas primitif @internationalized/date (mesin yang sama dengan
- * Calendar reka-ui) dengan locale Indonesia & pekan mulai Senin.
+ * Kalender booking custom — bukan input date HTML.
+ *
+ * Visual hierarchy:
+ *  - tanggal terbuka     → normal, bisa diklik (hover accent)
+ *  - tanggal penuh/tutup → redup jelas + tidak bisa diklik (tooltip menjelaskan)
+ *  - tanggal lampau      → lebih pudar lagi, disabled
+ *
+ * Catatan teknis: state reaktif hanya menyimpan angka & string ISO — objek
+ * CalendarDate dibuat lokal di fungsi, karena UnwrapRef Vue mem-flatten class
+ * eksternal dan merusak tipenya.
  */
 
-interface Props {
-  /** Tanggal terpilih dalam format "Y-m-d" (bisa kosong). */
-  modelValue: string
-  /** Tanggal paling awal yang boleh dipilih (default: besok). */
-  minDate?: string
+export interface CalendarDayAvailability {
+  date: string // 'YYYY-MM-DD'
+  available: boolean
+  slots: number
+  first_start: string | null
 }
 
-const props = withDefaults(defineProps<Props>(), { minDate: '' })
+interface GridDay {
+  iso: string
+  day: number
+  inMonth: boolean
+}
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
-  (e: 'change', value: string): void
-}>()
-
-const tz = getLocalTimeZone()
-const minDateValue = computed(() =>
-  props.minDate ? parseDate(props.minDate) : today(tz).add({ days: 1 }),
+const props = withDefaults(
+  defineProps<{
+    modelValue: string | null
+    availability: Record<string, CalendarDayAvailability>
+    /** Tanggal minimum yang bisa dipilih. Default: besok. */
+    min?: string
+  }>(),
+  { min: undefined },
 )
 
-// ── Bulan yang sedang ditampilkan ────────────────────────────────────────────
-function initialView(): DateValue {
-  const fromValue = props.modelValue ? parseDate(props.modelValue) : null
-  return fromValue && fromValue.compare(minDateValue.value) >= 0
-    ? fromValue
-    : minDateValue.value
+const emit = defineEmits<{
+  (e: 'update:modelValue', v: string): void
+  (e: 'change', v: string): void
+  (e: 'monthChange', from: string): void
+}>()
+
+const df = new DateFormatter('id-ID', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+const tz = getLocalTimeZone()
+
+function parseIso(iso: string): CalendarDate {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new CalendarDate(y, m, d)
 }
 
-const view = ref(initialView())
+function isoOf(d: CalendarDate): string {
+  return `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`
+}
+
+const todayValue: CalendarDate = today(tz)
+const todayIso = isoOf(todayValue)
+
+function getMin(): CalendarDate {
+  return props.min ? parseIso(props.min) : todayValue.add({ days: 1 })
+}
+
+/* ── Bulan tampilan (angka murni, bukan objek) ─────────────────────────── */
+const initial = props.modelValue ? parseIso(props.modelValue) : getMin()
+const vy = ref(initial.year)
+const vm = ref(initial.month)
+
+/** Beri tahu parent bulan yang sedang tampil — dipanggil saat mount & saat pindah bulan. */
+function emitVisibleMonth() {
+  emit('monthChange', isoOf(new CalendarDate(vy.value, vm.value, 1)))
+}
+onMounted(emitVisibleMonth)
+
 watch(
   () => props.modelValue,
   (v) => {
-    if (v && parseDate(v).compare(view.value) < 0) {
-      // terpilih di luar bulan tampilan (mis. reset) → geser tampilan
-      view.value = parseDate(v)
+    if (v) {
+      const d = parseIso(v)
+      if (d.year !== vy.value || d.month !== vm.value) {
+        vy.value = d.year
+        vm.value = d.month
+      }
     }
   },
 )
 
-const viewMonth = computed(() =>
-  view.value.set({ day: 1 }),
-)
+/* ── Grid: 6 pekan × 7 kolom, Senin sebagai awal pekan ─────────────────── */
+const grid = computed<GridDay[][]>(() => {
+  const first = new CalendarDate(vy.value, vm.value, 1)
+  const offsetToMonday = (first.toDate(tz).getDay() + 6) % 7
+  const gridStart = first.subtract({ days: offsetToMonday })
 
-const monthLabel = computed(() =>
-  new DateFormatter('id-ID', { month: 'long', year: 'numeric' }).format(
-    viewMonth.value.toDate(tz),
-  ),
-)
-
-/** Matriks 6 pekan × 7 hari, `null` = sel kosong di luar bulan. */
-const weeks = computed<(DateValue | null)[][]>(() => {
-  const first = viewMonth.value
-  // JS: 0=Minggu..6=Sabtu → geser agar pekan mulai Senin
-  const jsDow = first.toDate(tz).getDay()
-  const offset = (jsDow + 6) % 7
-  const gridStart = first.subtract({ days: offset })
-
-  const rows: (DateValue | null)[][] = []
-  let cursor = gridStart
+  const weeks: GridDay[][] = []
   for (let w = 0; w < 6; w++) {
-    const row: (DateValue | null)[] = []
-    for (let d = 0; d < 7; d++) {
-      row.push(cursor.month === first.month ? cursor : null)
-      cursor = cursor.add({ days: 1 })
+    const row: GridDay[] = []
+    for (let i = 0; i < 7; i++) {
+      const d = gridStart.add({ days: w * 7 + i })
+      row.push({ iso: isoOf(d), day: d.day, inMonth: d.month === vm.value && d.year === vy.value })
     }
-    rows.push(row)
+    weeks.push(row)
   }
-  return rows
+  return weeks
 })
 
-const weekLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-
-const selectedValue = computed(() =>
-  props.modelValue ? parseDate(props.modelValue) : null,
-)
-const todayValue = today(tz)
-
-function isDisabled(date: DateValue): boolean {
-  return date.compare(minDateValue.value) < 0
-}
-
-function dayLabel(date: DateValue): string {
-  return new DateFormatter('id-ID', { day: 'numeric' }).format(date.toDate(tz))
-}
-
-function onSelect(date: DateValue) {
-  if (isDisabled(date)) return
-  emit('update:modelValue', date.toString())
-  emit('change', date.toString())
-}
-
-function prevMonth() {
-  const target = viewMonth.value.subtract({ months: 1 }).set({ day: 1 })
-  if (target.compare(minDateValue.value.set({ day: 1 })) < 0) return
-  view.value = target
-}
-
-function nextMonth() {
-  view.value = viewMonth.value.add({ months: 1 }).set({ day: 1 })
-}
-
-const canPrev = computed(
-  () => viewMonth.value.subtract({ months: 1 }).set({ day: 1 }).compare(minDateValue.value.set({ day: 1 })) >= 0,
-)
-
-const selectedLabel = computed(() => {
-  if (!selectedValue.value) return 'Pilih tanggal sesi'
-  return new DateFormatter('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(selectedValue.value.toDate(tz))
+const weekdayLabels = computed<string[]>(() => {
+  const monday = new CalendarDate(2024, 1, 1) // 1 Jan 2024 = Senin
+  return Array.from({ length: 7 }, (_, i) =>
+    monday.add({ days: i }).toDate(tz).toLocaleDateString('id-ID', { weekday: 'short' }),
+  )
 })
+
+const monthTitle = computed(
+  () => new CalendarDate(vy.value, vm.value, 1).toDate(tz).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+)
+
+/* ── Navigasi bulan ────────────────────────────────────────────────────── */
+function canGoPrev(): boolean {
+  const min = getMin()
+  return vy.value > min.year || (vy.value === min.year && vm.value > min.month)
+}
+
+/** Batas navigasi: maksimal 3 bulan ke depan dari hari ini. */
+function maxVisible(): CalendarDate {
+  const max = todayValue.add({ months: 3 })
+  return new CalendarDate(max.year, max.month, 1)
+}
+
+function canGoNext(): boolean {
+  const max = maxVisible()
+  return vy.value < max.year || (vy.value === max.year && vm.value < max.month)
+}
+
+function goMonth(delta: number) {
+  if (delta > 0 && !canGoNext()) return
+  if (delta < 0 && !canGoPrev()) return
+  let y = vy.value
+  let m = vm.value + delta
+  if (m < 1) {
+    y--
+    m = 12
+  } else if (m > 12) {
+    y++
+    m = 1
+  }
+  vy.value = y
+  vm.value = m
+  emitVisibleMonth()
+}
+
+/* ── Ketersediaan per tanggal ──────────────────────────────────────────── */
+function isDisabledGd(gd: GridDay): boolean {
+  if (!gd.inMonth) return true
+  const d = parseIso(gd.iso)
+  if (d.compare(todayValue) < 0 || d.compare(getMin()) < 0) return true
+  // Tanggal tanpa data = disabled. User hanya bisa memilih tanggal yang
+  // sistem tahu pasti punya slot terbuka — tidak ada lagi klik-lalu-kosong.
+  const info = props.availability[gd.iso]
+  return !info || !info.available
+}
+
+function tooltipGd(gd: GridDay): string {
+  const d = parseIso(gd.iso)
+  if (d.compare(todayValue) < 0 || d.compare(getMin()) < 0) return 'Tanggal sudah lewat'
+  const info = props.availability[gd.iso]
+  if (!info || !info.available) return 'Tidak tersedia'
+  return `Tersedia · ${info.slots} slot · mulai ${info.first_start}`
+}
+
+/* ── State visual ──────────────────────────────────────────────────────── */
+function isTodayGd(gd: GridDay): boolean {
+  return gd.iso === todayIso
+}
+
+function isSelectedGd(gd: GridDay): boolean {
+  return props.modelValue === gd.iso
+}
+
+function select(gd: GridDay) {
+  if (isDisabledGd(gd)) return
+  emit('update:modelValue', gd.iso)
+  emit('change', gd.iso)
+}
+
+const selectedLabel = computed(() =>
+  props.modelValue ? df.format(parseIso(props.modelValue).toDate(tz)) : null,
+)
 </script>
 
 <template>
-  <div class="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
-    <!-- Header bulan -->
-    <div class="mb-3 flex items-center justify-between">
+  <div class="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
+    <!-- Header: judul bulan + navigasi -->
+    <div class="flex items-center justify-between">
       <button
         type="button"
-        class="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--muted)]/10 hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-30"
-        :disabled="!canPrev"
+        class="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)] disabled:pointer-events-none disabled:opacity-30"
+        :disabled="!canGoPrev()"
         aria-label="Bulan sebelumnya"
-        @click="prevMonth"
+        @click="goMonth(-1)"
       >
         <ChevronLeftIcon class="h-4 w-4" />
       </button>
-      <p class="text-sm font-semibold capitalize text-[var(--text)]">{{ monthLabel }}</p>
+
+      <h2 class="text-sm font-semibold tracking-tight text-[var(--text)]">{{ monthTitle }}</h2>
+
       <button
         type="button"
-        class="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--muted)]/10 hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 focus-visible:outline-none"
+        class="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--muted)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)] disabled:pointer-events-none disabled:opacity-30"
+        :disabled="!canGoNext()"
         aria-label="Bulan berikutnya"
-        @click="nextMonth"
+        @click="goMonth(1)"
       >
         <ChevronRightIcon class="h-4 w-4" />
       </button>
     </div>
 
-    <!-- Grid tanggal -->
-    <div class="select-none">
-      <div class="mb-1 grid grid-cols-7 gap-1">
-        <span
-          v-for="lbl in weekLabels"
-          :key="lbl"
-          class="pb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)]"
+    <!-- Grid kalender LEBAR: 7 kolom melebar penuh mengikuti kolom layout -->
+    <div class="mt-3">
+      <div class="grid grid-cols-7 gap-1.5">
+        <div
+          v-for="wd in weekdayLabels"
+          :key="wd"
+          class="pb-1 text-center text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]"
         >
-          {{ lbl }}
-        </span>
+          {{ wd }}
+        </div>
       </div>
 
-      <div
-        v-for="(week, wi) in weeks"
-        :key="wi"
-        class="mb-1 grid grid-cols-7 gap-1"
-      >
-        <div v-for="(date, di) in week" :key="`${wi}-${di}`" class="flex">
+      <div class="grid grid-cols-7 gap-1.5">
+        <template v-for="(week, wi) in grid" :key="`week-${wi}`">
           <button
-            v-if="date"
+            v-for="gd in week"
+            :key="gd.iso"
             type="button"
-            class="flex h-10 w-full items-center justify-center rounded-lg text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:outline-none"
-            :class="
-              selectedValue && date.compare(selectedValue) === 0
-                ? 'bg-[var(--accent)] font-semibold text-white hover:bg-[var(--accent)]'
-                : date.compare(todayValue) === 0
-                  ? 'font-bold text-[var(--accent)] hover:bg-[var(--muted)]/10'
-                  : isDisabled(date)
-                    ? 'cursor-not-allowed text-[var(--muted)]/30'
-                    : 'text-[var(--text)] hover:bg-[var(--muted)]/10'
-            "
-            :disabled="isDisabled(date)"
-            :aria-pressed="!!(selectedValue && date.compare(selectedValue) === 0)"
-            :aria-label="dayLabel(date)"
-            @click="onSelect(date)"
+            class="flex h-10 items-center justify-center rounded-lg text-[13px] tabular-nums transition-all duration-150"
+            :class="[
+              !gd.inMonth
+                ? 'pointer-events-none opacity-0'
+                : isDisabledGd(gd)
+                  ? 'cursor-not-allowed text-[var(--text)]/30'
+                  : isSelectedGd(gd)
+                    ? 'bg-[var(--accent)] font-semibold text-white shadow-sm'
+                    : 'text-[var(--text)] hover:bg-[var(--accent)]/10',
+              isTodayGd(gd) && !isSelectedGd(gd) && !isDisabledGd(gd)
+                ? 'ring-1 ring-inset ring-[var(--accent)]/40'
+                : '',
+            ]"
+            :disabled="isDisabledGd(gd)"
+            :aria-label="tooltipGd(gd)"
+            :title="tooltipGd(gd)"
+            @click="select(gd)"
           >
-            {{ date.day }}
+            {{ gd.day }}
           </button>
-          <span v-else class="h-10 w-full" />
-        </div>
+        </template>
       </div>
     </div>
 
-    <!-- Hasil pilihan -->
-    <p class="mt-3 flex items-center gap-1.5 border-t border-[var(--line)] pt-2.5 text-xs text-[var(--muted)]">
-      <CalendarDaysIcon class="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
-      <span class="font-medium text-[var(--text)]">{{ selectedLabel }}</span>
-    </p>
+    <!-- Footer: tanggal terpilih + hint -->
+    <div class="mt-3 flex items-center justify-between border-t border-[var(--line)] pt-2.5">
+      <p class="text-[11px] text-[var(--muted)]">
+        <span v-if="selectedLabel" class="font-medium text-[var(--text)]">{{ selectedLabel }}</span>
+        <template v-else>Pilih tanggal</template>
+      </p>
+      <p class="text-[10px] text-[var(--muted)]/70">Hover tanggal untuk detail ketersediaan</p>
+    </div>
   </div>
 </template>

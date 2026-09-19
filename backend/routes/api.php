@@ -65,6 +65,9 @@ Route::prefix('v1')->group(function () {
         // Available slots (cek sebelum booking)
         Route::get('/psikolog/{psikologId}/slots', [BookingController::class, 'availableSlots']);
 
+        // Ringkasan ketersediaan per-tanggal (kalender ✓/✕ + 5 slot terdekat)
+        Route::get('/psikolog/{psikologId}/availability', [BookingController::class, 'availability']);
+
         /*
         | ── DORMAN: Alur order + pembayaran ─────────────────────────
         | Dimatikan sesuai keputusan klien (pembayaran P2P di luar app).

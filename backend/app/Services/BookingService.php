@@ -99,6 +99,102 @@ class BookingService
     }
 
     /**
+     * Ringkasan ketersediaan per tanggal dalam rentang + rekomendasi slot terdekat.
+     * Dipakai kalender booking: tanda ✓/✕ per tanggal & daftar 5 slot terdekat.
+     * Hanya 2 query (schedules + bookings dalam rentang), sisanya dihitung di memori.
+     */
+    public function getAvailabilitySummary(User $psikolog, string $from, string $to, int $durationMinutes): array
+    {
+        $start = Carbon::parse($from)->startOfDay();
+        $end = Carbon::parse($to)->startOfDay();
+        $todayStart = now()->startOfDay();
+
+        // Jadwal psikolog per hari dalam seminggu (1 query)
+        $schedulesByDow = Schedule::where('psikolog_id', $psikolog->id)
+            ->where('is_available', true)
+            ->orderBy('start_time')
+            ->get()
+            ->groupBy('day_of_week');
+
+        // Booking aktif dalam rentang (1 query) — whereDate aman utk SQLite/MySQL
+        $bookingsByDate = Booking::where('psikolog_id', $psikolog->id)
+            ->whereDate('booking_date', '>=', $from)
+            ->whereDate('booking_date', '<=', $to)
+            ->whereIn('status', ['pending_psikolog', 'confirmed', 'in_progress'])
+            ->get()
+            ->groupBy(fn ($b) => Carbon::parse($b->booking_date)->format('Y-m-d'));
+
+        $days = [];
+        $next = [];
+
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+            $dateKey = $date->format('Y-m-d');
+            $dayBookings = $bookingsByDate->get($dateKey, collect());
+            $daySlots = $this->buildSlotsForDate(
+                $schedulesByDow->get($date->dayOfWeek, collect()),
+                $dayBookings,
+                $durationMinutes,
+            );
+            $available = array_values(array_filter($daySlots, fn ($s) => $s['is_available']));
+
+            $days[] = [
+                'date' => $dateKey,
+                'available' => count($available) > 0,
+                'slots' => count($available),
+                'first_start' => $available[0]['start_time'] ?? null,
+            ];
+
+            // Rekomendasi terdekat: mulai dari hari ini, maksimal 5 slot
+            if ($date->gte($todayStart) && count($next) < 5) {
+                foreach ($available as $slot) {
+                    $next[] = [
+                        'date' => $dateKey,
+                        'start_time' => $slot['start_time'],
+                        'end_time' => $slot['end_time'],
+                    ];
+                    if (count($next) >= 5) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return ['days' => $days, 'next' => $next];
+    }
+
+    /** Bangun daftar slot untuk satu tanggal dari jadwal + booking yang sudah ada. */
+    private function buildSlotsForDate($schedules, $bookings, int $durationMinutes): array
+    {
+        if ($schedules->isEmpty()) {
+            return [];
+        }
+
+        $slots = [];
+        foreach ($schedules as $schedule) {
+            $start = Carbon::parse($schedule->start_time);
+            $end = Carbon::parse($schedule->end_time);
+
+            while ($start->copy()->addMinutes($durationMinutes)->lte($end)) {
+                $slotEnd = $start->copy()->addMinutes($durationMinutes);
+                $isAvailable = $bookings->every(function ($booking) use ($start, $slotEnd) {
+                    $bookingStart = Carbon::parse($booking->start_time);
+                    $bookingEnd = Carbon::parse($booking->end_time);
+                    return $slotEnd->lte($bookingStart) || $start->gte($bookingEnd);
+                });
+
+                $slots[] = [
+                    'start_time' => $start->format('H:i'),
+                    'end_time' => $slotEnd->format('H:i'),
+                    'is_available' => $isAvailable,
+                ];
+                $start->addMinutes($durationMinutes);
+            }
+        }
+
+        return $slots;
+    }
+
+    /**
      * Check if psikolog is available on that day & time.
      */
     public function isPsikologAvailable(User $psikolog, string $date, string $startTime, string $endTime): bool
