@@ -6,7 +6,8 @@ import { ref, computed } from 'vue'
  * Pasien TIDAK membayar di aplikasi. Booking dibuat langsung
  * (pilih psikolog → paket → jadwal → selesai), menunggu persetujuan
  * psikolog. Pembayaran P2P ke psikolog SETELAH sesi selesai.
- * Tarif psikolog hanya INFORMASI — nominal akhir disepakati/nego langsung.
+ * Harga kategori/tarif psikolog hanya ACUAN BUDGET — nominal akhir
+ * disepakati dengan psikolog dan bisa bertambah/berkurang sesuai sesi.
  */
 
 export type ConsultationType = 'video' | 'offline'
@@ -29,11 +30,14 @@ export const useBookingStore = defineStore('booking', () => {
 
   // ── Paket (langkah 1) ─────────────────────────────────────────────────────
   const consultationType = ref<ConsultationType>('video')
-  const durationMinutes = ref<30 | 60 | 90>(60)
+  /** Durasi menit: preset 30/60/90 atau permintaan khusus (15–240). */
+  const durationMinutes = ref<number>(60)
   const note = ref('')
 
-  // ── Kategori klien (hanya informasi tarif, tidak diproses sebagai transaksi)
+  // ── Kategori klien (harga = acuan budget, bukan tagihan aplikasi) ─────
   const categories = ref<any[]>([])
+  /** Kategori yang dipilih pasien — dikirim sebagai requested_category_id. */
+  const requestedCategory = ref<any>(null)
 
   // ── Jadwal (langkah 2) ────────────────────────────────────────────────────
   const bookingDate = ref('')
@@ -50,6 +54,12 @@ export const useBookingStore = defineStore('booking', () => {
     return rate ? Number(rate) : null
   })
 
+  /** Acuan biaya: harga kategori terpilih, else tarif psikolog. */
+  const estimateRate = computed(() => {
+    if (requestedCategory.value) return Number(requestedCategory.value.base_price)
+    return infoRate.value
+  })
+
   /** Dipanggil parent saat masuk/menembus slug baru — reset state wizard. */
   function startFor(slug: string) {
     if (loadedForSlug.value === slug && psikolog.value) return
@@ -60,6 +70,7 @@ export const useBookingStore = defineStore('booking', () => {
     consultationType.value = 'video'
     durationMinutes.value = 60
     note.value = ''
+    requestedCategory.value = null
     bookingDate.value = ''
     slots.value = []
     selectedSlot.value = null
@@ -81,12 +92,14 @@ export const useBookingStore = defineStore('booking', () => {
     durationMinutes,
     note,
     categories,
+    requestedCategory,
     bookingDate,
     slots,
     loadingSlots,
     selectedSlot,
     confirmedBooking,
     infoRate,
+    estimateRate,
     startFor,
     resetSchedule,
   }

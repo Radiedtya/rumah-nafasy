@@ -33,9 +33,9 @@ class BookingController extends Controller
     {
         $request->validate([
             'date' => ['required', 'date', 'after_or_equal:today'],
-            // Terima duration_minutes (dipakai frontend) — 30/60/90 menit
-            'duration_minutes' => ['nullable', 'integer', 'in:30,60,90'],
-            'duration' => ['nullable', 'integer', 'in:30,60,90'],
+            // Preset 30/60/90 atau permintaan khusus 15–240 menit
+            'duration_minutes' => ['nullable', 'integer', 'min:15', 'max:240'],
+            'duration' => ['nullable', 'integer', 'min:15', 'max:240'],
         ]);
 
         $psikolog = User::role('psikolog')->with('psikologProfile')->findOrFail($psikologId);
@@ -111,7 +111,7 @@ class BookingController extends Controller
             ]);
         });
 
-        $booking->load(['psikolog.psikologProfile']);
+        $booking->load(['psikolog.psikologProfile', 'requestedCategory']);
 
         app(FonnteService::class)->notifyUser(
             $booking->psikolog,

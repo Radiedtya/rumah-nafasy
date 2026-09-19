@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/vue": "^2.2.0",
+    "@internationalized/date": "^3.12.4",
     "pinia": "^4.0.3",
     "reka-ui": "^2.10.4",
     "simple-icons": "^16.30.0",
