@@ -37,6 +37,10 @@ Route::prefix('v1')->group(function () {
             Route::put('/profile', [ProfileController::class, 'update']);
             Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
             Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
+
+            // Penghubungan akun Google (settings profil)
+            Route::post('/google/connect/start', [GoogleAuthController::class, 'connectStart']);
+            Route::post('/google/disconnect', [GoogleAuthController::class, 'disconnect'])->middleware('throttle:5,1');
         });
     });
 

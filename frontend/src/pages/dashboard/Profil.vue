@@ -6,6 +6,7 @@ import PageHeader from '../../components/dashboard/PageHeader.vue'
 import BaseBadge from '../../components/ui/BaseBadge.vue'
 import BaseButton from '../../components/ui/BaseButton.vue'
 import BaseCard from '../../components/ui/BaseCard.vue'
+import AccountMethodsCard from '../../components/dashboard/AccountMethodsCard.vue'
 
 const auth = useAuthStore()
 
@@ -545,6 +546,9 @@ async function handleSubmit() {
         </div>
       </form>
     </BaseCard>
+
+    <!-- Metode Masuk: Google & password -->
+    <AccountMethodsCard class="mt-5" />
   </div>
 </template>
 
