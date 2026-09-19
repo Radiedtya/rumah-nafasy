@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Api\Controller;
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -15,20 +15,28 @@ use Laravel\Socialite\Facades\Socialite;
 class GoogleAuthController extends Controller
 {
     /**
-     * ── Alur Login Google (backend-driven redirect, dukung popup) ───────
+     * ── Alur Login & Penghubungan Google (backend-driven) ───────────────
      *
-     * 1. GET  {backend}/auth/google/redirect?redirect={url_landing_spa}
-     *        → 302 ke konsen Google (state anti-CSRF disimpan session)
-     * 2. GET  {backend}/auth/google/callback
-     *        → validasi state, cari/buat user, simpan kode sekali pakai
-     *          di Cache → 302 kembali ke URL landing SPA + ?code=…
-     * 3. POST {backend}/api/v1/auth/google/exchange  { code }
-     *        → kode sekali pakai → Sanctum token
+     * LOGIN (publik — mekanisme "no dead end"):
+     *   Google → cari user by google_id → else by email (auto-link) →
+     *   else BUAT akun baru (role pasien). Satu tombol, hasil pasti masuk.
      *
-     * Landing SPA bisa berupa popup (/auth/google/callback?popup=1) yang
-     * meneruskan kode ke jendela asal via postMessage — penukaran token
-     * tetap dilakukan backend; client secret tidak pernah keluar dari sini.
+     * CONNECT (hanya user terautentikasi):
+     *   POST auth/google/connect/start (auth:sanctum) menerbitkan token
+     *   one-time → popup membuka /auth/google/redirect?intent=connect&token=
+     *   → token ditukar jadi identitas di session → Google → callback
+     *   → google_id ditautkan KE user itu (dengan pemeriksaan konflik).
+     *
+     * Keamanan:
+     * - State anti-CSRF Socialite (session) aktif di semua jalur.
+     * - Token connect: one-time, TTL 10 menit, hanya lewat endpoint auth.
+     * - Connect MENOLAK bila email/Google ID sudah dipakai user lain —
+     *   tidak ada pengambilalihan akun secara diam-diam.
+     * - Kode exchange: sekali pakai, TTL 10 menit, disimpan Cache server.
      */
+
+    private const CODE_TTL_MINUTES = 10;
+    private const CONNECT_TTL_MINUTES = 10;
 
     public function redirect(Request $request): RedirectResponse
     {
@@ -36,12 +44,29 @@ class GoogleAuthController extends Controller
             // URL SPA tempat browser mendarat setelah callback — wajib
             // origin frontend yang dipercaya (lihat safeSpaRedirect).
             'redirect' => ['nullable', 'string'],
+            'intent' => ['nullable', 'in:login,connect'],
+            'token' => ['nullable', 'string', 'size:64'],
         ]);
 
         $landing = $this->safeSpaRedirect($request->query('redirect'));
+        $landingPath = $this->landingPathOf($landing);
+        $sep = str_contains($landingPath, '?') ? '&' : '?';
 
-        // Dibawa bolak-balik lewat session agar tidak bocor di URL Google
         session(['google_spa_redirect' => $landing]);
+        session()->forget('google_connect_user_id');
+
+        if ($request->query('intent') === 'connect') {
+            // Connect wajib membawa token one-time yang diterbitkan
+            // endpoint terautentikasi (auth:sanctum) — tidak bisa dipanggil
+            // sembarangan untuk menautkan akun paksa.
+            $userId = Cache::pull('google_connect_' . $request->query('token'));
+
+            if (!$userId) {
+                return redirect()->away($this->originOf($landing) . $landingPath . $sep . 'google=token');
+            }
+
+            session(['google_connect_user_id' => (int) $userId]);
+        }
 
         // Mode STATEFUL (default): Socialite memvalidasi parameter `state`
         // anti-CSRF terhadap session — proteksi tetap aktif.
@@ -53,14 +78,17 @@ class GoogleAuthController extends Controller
     public function callback(Request $request): RedirectResponse
     {
         $landing = session('google_spa_redirect');
+        $connectUserId = session('google_connect_user_id');
         session()->forget('google_spa_redirect');
+        session()->forget('google_connect_user_id');
 
         $spaOrigin = $this->originOf($landing);
         $landingPath = $this->landingPathOf($landing);
+        $sep = str_contains($landingPath, '?') ? '&' : '?';
 
         // Semua kegagalan kembali ke URL landing SPA (popup ikut tertutup rapi)
         $fail = fn (string $kind): RedirectResponse => redirect()->away(
-            $spaOrigin . $landingPath . (str_contains($landingPath, '?') ? '&' : '?') . 'google=' . $kind
+            $spaOrigin . $landingPath . $sep . 'google=' . $kind
         );
 
         try {
@@ -76,22 +104,105 @@ class GoogleAuthController extends Controller
             return $fail('error');
         }
 
-        $user = $this->findOrCreateUser($googleUser);
+        if ($connectUserId) {
+            // ── Jalur CONNECT: tautkan Google ke user yang meminta ──
+            $user = User::find($connectUserId);
 
-        // Akun dinonaktifkan admin → tolak
-        if (!$user->is_active) {
-            return $fail('blocked');
+            if (!$user || !$user->is_active) {
+                return $fail('error');
+            }
+
+            // Google ID ini sudah dipakai akun lain → tolak
+            $linkedElsewhere = User::where('google_id', $googleUser->getId())
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($linkedElsewhere) {
+                return $fail('linked');
+            }
+
+            // Email Google dipakai akun LAIN → tolak (jangan takeover diam-diam)
+            $emailTaken = User::where('email', $googleUser->getEmail())
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($emailTaken) {
+                return $fail('conflict');
+            }
+
+            $user->forceFill(['google_id' => $googleUser->getId()])->save();
+        } else {
+            // ── Jalur LOGIN: no dead end — link atau buat ──
+            $user = $this->findOrCreateUser($googleUser);
+
+            if (!$user->is_active) {
+                return $fail('blocked');
+            }
         }
 
         // Kode sekali pakai — CACHE server-side, kedaluwarsa 10 menit,
         // dipull (auto-hapus) saat ditukar di endpoint exchange.
         $code = Str::random(64);
-        Cache::put("google_exchange_{$code}", $user->id, now()->addMinutes(10));
-
-        // Landing path sudah boleh membawa query milik SPA (?popup=1&redirect=…)
-        $sep = str_contains($landingPath, '?') ? '&' : '?';
+        Cache::put("google_exchange_{$code}", $user->id, now()->addMinutes(self::CODE_TTL_MINUTES));
 
         return redirect()->away($spaOrigin . $landingPath . $sep . 'code=' . $code);
+    }
+
+    /**
+     * API (auth:sanctum): terbitkan URL popup penghubungan akun Google.
+     * URL mengandung token one-time yang terikat ke user yang login.
+     */
+    public function connectStart(Request $request): JsonResponse
+    {
+        $request->validate([
+            'landing' => ['nullable', 'string'],
+        ]);
+
+        $landing = $this->safeSpaRedirect($request->input('landing'));
+
+        $token = Str::random(64);
+        Cache::put("google_connect_{$token}", $request->user()->id, now()->addMinutes(self::CONNECT_TTL_MINUTES));
+
+        $url = rtrim(config('app.url'), '/') . '/auth/google/redirect?' . http_build_query([
+            'intent' => 'connect',
+            'token' => $token,
+            'redirect' => $landing,
+        ]);
+
+        return $this->successResponse([
+            'url' => $url,
+            'expires_in' => self::CONNECT_TTL_MINUTES * 60,
+        ], 'URL penghubungan Google dibuat');
+    }
+
+    /**
+     * API (auth:sanctum): putuskan akun Google.
+     * WAJIB konfirmasi password bila user punya password — mencegah
+     * penyerang sesi merusak jalur login user. User tanpa password
+     * dilarang memutus (akan terkunci) — harus atur password dulu.
+     */
+    public function disconnect(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->google_id) {
+            return $this->errorResponse('Google belum terhubung ke akun ini', 422);
+        }
+
+        if (!$user->password) {
+            return $this->errorResponse('Atur password terlebih dahulu sebelum memutus Google', 422);
+        }
+
+        if (!Hash::check((string) $request->input('password', ''), $user->password)) {
+            return $this->errorResponse('Password salah — konfirmasi diperlukan untuk memutus Google', 422);
+        }
+
+        $user->forceFill(['google_id' => null])->save();
+
+        return $this->successResponse(
+            new \App\Http\Resources\UserResource($user->fresh()->load('roles', 'psikologProfile')),
+            'Akun Google berhasil diputus'
+        );
     }
 
     /**
@@ -124,12 +235,23 @@ class GoogleAuthController extends Controller
         ], 'Login Google berhasil');
     }
 
+    /**
+     * Resolusi identitas LOGIN — urutan yang benar:
+     * 1. google_id  → identitas Google itu sendiri (aman bila email Google berubah)
+     * 2. email      → auto-link (akun email/password eksisting dipakai langsung)
+     * 3. buat baru  → role pasien, email terverifikasi
+     */
     private function findOrCreateUser(\Laravel\Socialite\Contracts\User $googleUser): User
     {
-        $user = User::where('email', $googleUser->getEmail())->first();
-
+        // 1. Sudah pernah link via google_id?
+        $user = User::where('google_id', $googleUser->getId())->first();
         if ($user) {
-            // Akun lama (email/password) di-link dengan Google — email terverifikasi Google
+            return $user;
+        }
+
+        // 2. Email dikenal → auto-link (mekanisme "register Google → masuk akun lama")
+        $user = User::where('email', $googleUser->getEmail())->first();
+        if ($user) {
             if (!$user->google_id) {
                 $user->forceFill([
                     'google_id' => $googleUser->getId(),
@@ -140,7 +262,7 @@ class GoogleAuthController extends Controller
             return $user;
         }
 
-        // User baru — default role pasien
+        // 3. Belum ada → buat akun baru
         $user = User::create([
             'name' => $googleUser->getName() ?: 'Pengguna Google',
             'email' => $googleUser->getEmail(),

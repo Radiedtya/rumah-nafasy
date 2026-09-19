@@ -15,7 +15,9 @@ class LoginController extends Controller
     {
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        // User khusus-Google punya password NULL — Hash::check di atasnya
+        // akan error/crash; perlakukan sebagai kredensial salah.
+        if (!$user || !$user->password || !Hash::check($request->password, $user->password)) {
             return $this->errorResponse('Email atau password salah', 401);
         }
 

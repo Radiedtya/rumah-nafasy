@@ -6,83 +6,44 @@ import type { UserProfile } from '../stores/auth'
 import { apiFetch } from '../lib/api'
 import { ArrowRightIcon } from '@heroicons/vue/20/solid'
 import { useTheme } from '../composables/theme'
-import { googleAuthUrl } from '../lib/config'
+import { useGooglePopup } from '../composables/googleAuth'
+
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+const { resolvedMode, setMode } = useTheme()
+
+const email = ref('')
+const password = ref('')
+const errors = ref<{ email?: string; password?: string; form?: string }>({})
+const isLoading = ref(false)
 
 // ── Login Google via POPUP (pola GitHub/Vercel) ─────────────────────────────
 
-const POPUP_W = 480
-const POPUP_H = 640
-
-const googlePopup = ref<Window | null>(null)
-let popupWatch: number | undefined
-
-/** Pusat popup di atas jendela induk. */
-function popupCenterSpec(): string {
-  const dualLeft = window.screenLeft ?? window.screenX
-  const dualTop = window.screenTop ?? window.screenY
-  const w = window.innerWidth || document.documentElement.clientWidth || screen.width
-  const h = window.innerHeight || document.documentElement.clientHeight || screen.height
-  const left = Math.max(0, Math.round(dualLeft + (w - POPUP_W) / 2))
-  const top = Math.max(0, Math.round(dualTop + (h - POPUP_H) / 2.5))
-  return `popup=yes,width=${POPUP_W},height=${POPUP_H},left=${left},top=${top},scrollbars=yes,status=no`
-}
+const { open: openGooglePopup, fallbackRedirect, loginUrl } = useGooglePopup()
 
 function handleGoogleLogin() {
   errors.value = {}
+  isLoading.value = true
 
-  // Landing popup — popup meneruskan kode ke jendela ini via postMessage
-  const landing = `${window.location.origin}/auth/google/callback?popup=1`
-
-  googlePopup.value = window.open(
-    googleAuthUrl(landing),
-    'google_oauth',
-    popupCenterSpec(),
-  )
+  const ok = openGooglePopup(loginUrl(), {
+    onCode: (code) => completeGoogleLogin(code),
+    onError: (kind) => {
+      isLoading.value = false
+      if (kind === 'blocked') {
+        errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
+      } else {
+        errors.value = { form: 'Login Google gagal — coba lagi.' }
+      }
+    },
+    onDismissed: () => {
+      isLoading.value = false
+    },
+  })
 
   // Popup diblokir browser → fallback redirect penuh (tetap aman)
-  if (!googlePopup.value) {
-    errors.value = { form: 'Popup diblokir browser — melanjutkan lewat tab…' }
-    window.location.href = googleAuthUrl(landing)
-    return
-  }
-
-  window.addEventListener('message', onGoogleMessage)
-  // Jika popup ditutup tanpa menyelesaikan login → bersihkan state
-  popupWatch = window.setInterval(() => {
-    if (googlePopup.value?.closed) {
-      cleanupPopup()
-      isLoading.value = false
-    }
-  }, 500)
-}
-
-/**
- * Terima kode dari popup. Keamanan berlapis:
- * 1. event.origin HARUS origin kita sendiri (popup sibling same-origin)
- * 2. event.source HARUS window popup yang KITA buka (bukan iframe/stranger)
- * 3. payload harus bertipe 'google-oauth' — bukan pesan lain
- */
-function onGoogleMessage(event: MessageEvent) {
-  if (event.origin !== window.location.origin) return
-  // Untuk popup, event.source ADALAH referensi jendela popup — pastikan
-  // pesan datang dari popup yang KITA buka (bukan iframe/stranger window).
-  if (event.source !== googlePopup.value) return
-  const data = event.data as { type?: string; code?: string; error?: string } | null
-  if (!data || data.type !== 'google-oauth') return
-
-  cleanupPopup()
-  googlePopup.value?.close()
-
-  if (data.error === 'blocked') {
-    errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
-    return
-  }
-  if (data.error) {
-    errors.value = { form: 'Login Google gagal — coba lagi.' }
-    return
-  }
-  if (data.code) {
-    void completeGoogleLogin(data.code)
+  if (!ok) {
+    fallbackRedirect(loginUrl())
   }
 }
 
@@ -106,36 +67,8 @@ async function completeGoogleLogin(code: string) {
   }
 }
 
-function cleanupPopup() {
-  window.removeEventListener('message', onGoogleMessage)
-  if (popupWatch) {
-    window.clearInterval(popupWatch)
-    popupWatch = undefined
-  }
-}
-
 onBeforeUnmount(() => {
-  cleanupPopup()
-  googlePopup.value?.close()
-})
-
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore()
-const { resolvedMode, setMode } = useTheme()
-
-const email = ref('')
-const password = ref('')
-const errors = ref<{ email?: string; password?: string; form?: string }>({})
-const isLoading = ref(false)
-
-// Balikan gagal dari callback Google (backend redirect → /login?google=…)
-onMounted(() => {
-  if (route.query.google === 'blocked') {
-    errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
-  } else if (route.query.google === 'error') {
-    errors.value = { form: 'Login Google gagal — akun Google tidak memberikan email atau terjadi kesalahan.' }
-  }
+  // pembersihan listener popup ditangani composable
 })
 
 // ── Validation ──────────────────────────────────────────────────────────────
@@ -190,6 +123,15 @@ async function handleLogin() {
     isLoading.value = false
   }
 }
+
+// Balikan gagal dari callback Google (fallback redirect penuh → /login?google=…)
+onMounted(() => {
+  if (route.query.google === 'blocked') {
+    errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
+  } else if (route.query.google === 'error') {
+    errors.value = { form: 'Login Google gagal — akun Google tidak memberikan email atau terjadi kesalahan.' }
+  }
+})
 </script>
 
 <template>
@@ -207,10 +149,11 @@ async function handleLogin() {
           <p>Masuk untuk melanjutkan perjalanan kesehatan mental Anda.</p>
         </div>
 
-        <!-- Google OAuth — backend-driven redirect flow -->
+        <!-- Google OAuth — backend-driven popup flow -->
         <button
           type="button"
           class="google-button google-button--active"
+          :disabled="isLoading"
           aria-label="Masuk dengan Google"
           @click="handleGoogleLogin"
         >
@@ -220,7 +163,7 @@ async function handleLogin() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
-          Masuk dengan Google
+          {{ isLoading ? 'Memproses…' : 'Masuk dengan Google' }}
         </button>
 
         <div class="login-divider"><span>ATAU</span></div>
@@ -414,7 +357,8 @@ async function handleLogin() {
   font-weight: 600;
 }
 .google-button--active { cursor: pointer; opacity: 1; transition: background 160ms; }
-.google-button--active:hover { background: color-mix(in srgb, var(--border) 30%, var(--bg)); }
+.google-button--active:hover:not(:disabled) { background: color-mix(in srgb, var(--border) 30%, var(--bg)); }
+.google-button:disabled { opacity: 0.6; cursor: wait; }
 .google-icon { width: 18px; height: 18px; flex-shrink: 0; }
 
 /* ── Divider ────────────────────────────────────────────────────────── */

@@ -20,6 +20,9 @@ class UserResource extends JsonResource
             'email_verified_at' => $this->email_verified_at?->toISOString(),
             'phone_verified_at' => $this->phone_verified_at?->toISOString(),
             'is_active' => $this->is_active,
+            // Metode login (untuk pengaturan keamanan akun)
+            'has_google' => (bool) $this->google_id,
+            'has_password' => (bool) $this->password,
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
             'psikolog_profile' => $this->whenLoaded('psikologProfile', function () {
                 return [

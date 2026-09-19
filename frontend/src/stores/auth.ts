@@ -9,6 +9,9 @@ export interface UserProfile {
   phone: string
   avatar?: string | null
   roles?: string[]
+  /** Metode login tersedia (untuk pengaturan keamanan akun). */
+  has_google?: boolean
+  has_password?: boolean
   psikolog_profile?: {
     id: number
     slug: string
