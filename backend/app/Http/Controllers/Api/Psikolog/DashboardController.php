@@ -17,9 +17,9 @@ class DashboardController extends Controller
         $profile = $psikolog->psikologProfile;
         $today = now()->format('Y-m-d');
 
-        // Today's bookings
+        // Today's bookings (whereDate — kolom date tersimpan dengan komponen waktu di SQLite)
         $todayBookings = Booking::where('psikolog_id', $psikolog->id)
-            ->where('booking_date', $today)
+            ->whereDate('booking_date', $today)
             ->whereIn('status', ['confirmed', 'in_progress'])
             ->with(['pasien', 'order.category', 'order.duration'])
             ->orderBy('start_time')
@@ -28,7 +28,7 @@ class DashboardController extends Controller
         // Upcoming bookings (future, not today)
         $upcomingCount = Booking::where('psikolog_id', $psikolog->id)
             ->where('status', 'confirmed')
-            ->where('booking_date', '>', $today)
+            ->whereDate('booking_date', '>', $today)
             ->count();
 
         // Total completed consultations

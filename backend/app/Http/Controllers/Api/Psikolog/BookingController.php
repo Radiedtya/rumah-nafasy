@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\Controller;
 use App\Http\Requests\Psikolog\UpdateBookingStatusRequest;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
+use App\Services\FonnteService;
+use App\Support\WhatsAppMessages;
 use Illuminate\Http\Request;
 
 class BookingController extends Controller
@@ -20,7 +22,7 @@ class BookingController extends Controller
         }
 
         if ($request->filled('date')) {
-            $query->where('booking_date', $request->date);
+            $query->whereDate('booking_date', $request->date);
         }
 
         $bookings = $query->latest('booking_date')->paginate(min($request->get('per_page', 10), 50));
@@ -45,9 +47,37 @@ class BookingController extends Controller
             return $this->errorResponse('Anda tidak memiliki akses', 403);
         }
 
-        $booking->update(['status' => $request->status]);
+        $status = $request->status;
 
-        $booking->load(['order.category', 'order.duration', 'pasien']);
+        // Tolak pengajuan wajib menyertakan alasan
+        if ($status === 'rejected' && !$request->filled('rejected_reason')) {
+            return $this->errorResponse('Alasan penolakan wajib diisi', 422);
+        }
+
+        // Transisi valid: hanya dari pending_psikolog boleh ke rejected
+        if ($status === 'rejected' && !$booking->isPendingPsikolog()) {
+            return $this->errorResponse('Hanya pengajuan yang menunggu persetujuan yang dapat ditolak', 422);
+        }
+
+        $booking->update([
+            'status' => $status,
+            'rejected_reason' => $status === 'rejected' ? $request->rejected_reason : null,
+        ]);
+
+        $booking->load(['order.category', 'order.duration', 'pasien', 'psikolog.psikologProfile']);
+
+        // Notifikasi pasien hanya saat status benar-benar berubah
+        if ($status === 'confirmed' && $booking->wasChanged('status')) {
+            app(FonnteService::class)->notifyUser(
+                $booking->pasien,
+                WhatsAppMessages::bookingApproved($booking)
+            );
+        } elseif ($status === 'rejected' && $booking->wasChanged('status')) {
+            app(FonnteService::class)->notifyUser(
+                $booking->pasien,
+                WhatsAppMessages::bookingRejected($booking)
+            );
+        }
 
         return $this->successResponse(
             new BookingResource($booking),

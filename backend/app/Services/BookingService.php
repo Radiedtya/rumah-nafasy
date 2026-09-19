@@ -28,10 +28,15 @@ class BookingService
             return [];
         }
 
-        // Get existing bookings for this date
+        // Get existing bookings for this date.
+        // pending_psikolog ikut memblokir slot: slot yang diajukan tidak boleh
+        // ditawarkan ke pasien lain sebelum psikolog memutuskan.
+        // PENTING: pakai whereDate — kolom date di SQLite tersimpan dengan
+        // komponen waktu ("Y-m-d 00:00:00"), where biasa tidak pernah match
+        // dan menyebabkan double-booking.
         $existingBookings = Booking::where('psikolog_id', $psikolog->id)
-            ->where('booking_date', $date)
-            ->whereIn('status', ['confirmed', 'in_progress'])
+            ->whereDate('booking_date', $date)
+            ->whereIn('status', ['pending_psikolog', 'confirmed', 'in_progress'])
             ->get();
 
         $slots = [];
@@ -77,8 +82,8 @@ class BookingService
         ?int $excludeBookingId = null
     ): bool {
         $query = Booking::where('psikolog_id', $psikolog->id)
-            ->where('booking_date', $date)
-            ->whereIn('status', ['confirmed', 'in_progress'])
+            ->whereDate('booking_date', $date)
+            ->whereIn('status', ['pending_psikolog', 'confirmed', 'in_progress'])
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->where(function ($q2) use ($startTime, $endTime) {
                     $q2->where('start_time', '<', $endTime)

@@ -1,113 +1,36 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   VideoCameraIcon,
-  ChatBubbleLeftRightIcon,
+  MapPinIcon,
   ArrowRightIcon,
+  BanknotesIcon,
 } from '@heroicons/vue/24/outline'
-import { apiFetch } from '../../../lib/api'
-import { useBookingStore, formatRupiah } from '../../../stores/booking'
+import { useBookingStore, formatRupiah, type ConsultationType } from '../../../stores/booking'
 import BaseButton from '../../../components/ui/BaseButton.vue'
 
 const router = useRouter()
 const store = useBookingStore()
 
-const isSubmitting = ref(false)
-const error = ref('')
+const canProceed = computed(() => !!store.consultationType && !!store.durationMinutes)
 
-const canProceed = computed(() => !!store.selectedCategory && !!store.selectedDuration)
+const durations = [
+  { minutes: 30 as const, label: '30 Menit' },
+  { minutes: 60 as const, label: '60 Menit' },
+  { minutes: 90 as const, label: '90 Menit' },
+]
 
-async function proceedToPayment() {
-  if (!canProceed.value || !store.psikolog) return
-
-  isSubmitting.value = true
-  error.value = ''
-
-  try {
-    // 1. Buat order
-    const orderRes = await apiFetch('pasien/orders', {
-      method: 'POST',
-      body: JSON.stringify({
-        psikolog_id: store.psikolog.id,
-        category_id: store.selectedCategory.id,
-        duration_id: store.selectedDuration.id,
-        consultation_type: store.consultationType,
-      }),
-    })
-    store.order = orderRes.data
-
-    // 2. Buat pembayaran
-    const paymentRes = await apiFetch(`pasien/orders/${store.order.id}/payment`, {
-      method: 'POST',
-    })
-    store.payment = paymentRes.data
-
-    router.push(`/dashboard/booking/${store.psikolog.slug}/pembayaran`)
-  } catch (err: any) {
-    error.value = err.message || 'Gagal memproses order'
-  } finally {
-    isSubmitting.value = false
-  }
+function chooseType(type: ConsultationType) {
+  store.consultationType = type
 }
 </script>
 
 <template>
   <div class="space-y-6">
-    <div v-if="error" class="rounded-lg bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400">
-      {{ error }}
-    </div>
-
-    <!-- 1. Kategori klien -->
+    <!-- 1. Jenis konsultasi -->
     <section>
-      <h2 class="text-sm font-semibold text-[var(--text)]">1. Pilih Kategori Klien</h2>
-      <p class="mt-0.5 text-xs text-[var(--muted)]">Tarif mengikuti kategori klien; psikolog dapat menetapkan tarif khusus.</p>
-      <div class="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-        <button
-          v-for="cat in store.categories"
-          :key="cat.id"
-          type="button"
-          class="rounded-xl border p-4 text-left transition-colors"
-          :class="
-            store.selectedCategory?.id === cat.id
-              ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
-              : 'border-[var(--line)] hover:bg-[var(--muted)]/6'
-          "
-          @click="store.selectedCategory = cat"
-        >
-          <p class="text-sm font-semibold text-[var(--text)]">{{ cat.name }}</p>
-          <p class="mt-1 text-xs tabular-nums text-[var(--muted)]">
-            {{ formatRupiah(cat.base_price) }} / 60 menit
-          </p>
-        </button>
-      </div>
-    </section>
-
-    <!-- 2. Durasi -->
-    <section>
-      <h2 class="text-sm font-semibold text-[var(--text)]">2. Pilih Durasi Sesi</h2>
-      <div class="mt-3 grid gap-2.5 sm:grid-cols-3">
-        <button
-          v-for="dur in store.durations"
-          :key="dur.id"
-          type="button"
-          class="rounded-xl border p-4 text-left transition-colors"
-          :class="
-            store.selectedDuration?.id === dur.id
-              ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
-              : 'border-[var(--line)] hover:bg-[var(--muted)]/6'
-          "
-          @click="store.selectedDuration = dur"
-        >
-          <p class="text-sm font-semibold text-[var(--text)]">{{ dur.name }}</p>
-          <p class="mt-1 text-xs tabular-nums text-[var(--muted)]">{{ dur.multiplier }}x harga · {{ dur.minutes }} menit</p>
-        </button>
-      </div>
-    </section>
-
-    <!-- 3. Media -->
-    <section>
-      <h2 class="text-sm font-semibold text-[var(--text)]">3. Media Konsultasi</h2>
+      <h2 class="text-sm font-semibold text-[var(--text)]">1. Pilih Jenis Konsultasi</h2>
       <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
         <button
           type="button"
@@ -117,43 +40,84 @@ async function proceedToPayment() {
               ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
               : 'border-[var(--line)] hover:bg-[var(--muted)]/6'
           "
-          @click="store.consultationType = 'video'"
+          @click="chooseType('video')"
         >
           <VideoCameraIcon class="h-5 w-5 shrink-0 text-[var(--accent)]" />
           <div>
             <p class="text-sm font-semibold text-[var(--text)]">Video Call</p>
-            <p class="text-xs text-[var(--muted)]">Sesi via ruang Jitsi Meet</p>
+            <p class="text-xs text-[var(--muted)]">Sesi via ruang video online</p>
           </div>
         </button>
         <button
           type="button"
           class="flex items-center gap-3 rounded-xl border p-4 text-left transition-colors"
           :class="
-            store.consultationType === 'chat'
+            store.consultationType === 'offline'
               ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
               : 'border-[var(--line)] hover:bg-[var(--muted)]/6'
           "
-          @click="store.consultationType = 'chat'"
+          @click="chooseType('offline')"
         >
-          <ChatBubbleLeftRightIcon class="h-5 w-5 shrink-0 text-[var(--accent)]" />
+          <MapPinIcon class="h-5 w-5 shrink-0 text-[var(--accent)]" />
           <div>
-            <p class="text-sm font-semibold text-[var(--text)]">Chat Teks</p>
-            <p class="text-xs text-[var(--muted)]">Asinkron via pesan</p>
+            <p class="text-sm font-semibold text-[var(--text)]">Offline (Tatap Muka)</p>
+            <p class="text-xs text-[var(--muted)]">Sesi langsung di lokasi praktik</p>
           </div>
+        </button>
+      </div>
+      <p v-if="store.consultationType === 'offline' && store.psikolog?.workplace" class="mt-2 text-[11px] text-[var(--muted)]">
+        Lokasi praktik: <span class="font-medium text-[var(--text)]">{{ store.psikolog.workplace }}</span>
+      </p>
+    </section>
+
+    <!-- 2. Durasi -->
+    <section>
+      <h2 class="text-sm font-semibold text-[var(--text)]">2. Pilih Durasi Sesi</h2>
+      <div class="mt-3 grid gap-2.5 sm:grid-cols-3">
+        <button
+          v-for="d in durations"
+          :key="d.minutes"
+          type="button"
+          class="rounded-xl border p-4 text-left transition-colors"
+          :class="
+            store.durationMinutes === d.minutes
+              ? 'border-[var(--accent)] bg-[var(--accent)]/8 ring-1 ring-[var(--accent)]/40'
+              : 'border-[var(--line)] hover:bg-[var(--muted)]/6'
+          "
+          @click="store.durationMinutes = d.minutes"
+        >
+          <p class="text-sm font-semibold text-[var(--text)]">{{ d.label }}</p>
         </button>
       </div>
     </section>
 
+    <!-- 3. Catatan opsional -->
+    <section>
+      <h2 class="text-sm font-semibold text-[var(--text)]">3. Catatan untuk Psikolog <span class="font-normal text-[var(--muted)]">(opsional)</span></h2>
+      <textarea
+        v-model="store.note"
+        rows="3"
+        maxlength="500"
+        placeholder="Contoh: kondisi atau keluhan yang ingin didiskusikan…"
+        class="field-input mt-3 resize-none"
+      />
+    </section>
+
+    <!-- Info pembayaran -->
+    <section class="flex items-start gap-2.5 rounded-xl border border-dashed border-[var(--line)] bg-[var(--muted)]/5 p-4">
+      <BanknotesIcon class="mt-0.5 h-4.5 w-4.5 shrink-0 text-[var(--accent)]" />
+      <p class="text-xs leading-relaxed text-[var(--muted)]">
+        <strong class="text-[var(--text)]">Konsultasi sekarang, bayar nanti.</strong>
+        Tidak ada pembayaran di aplikasi — pengajuan Anda akan ditinjau psikolog, dan pembayaran
+        dilakukan langsung setelah sesi selesai
+        <template v-if="store.infoRate"> (tarif acuan ~ {{ formatRupiah(store.infoRate) }} / sesi, dapat disepakati ulang)</template>.
+      </p>
+    </section>
+
     <!-- Footer aksi -->
-    <div class="flex items-center justify-between gap-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
-      <div>
-        <p class="text-[11px] text-[var(--muted)]">Estimasi Total Biaya</p>
-        <p class="text-xl font-semibold tabular-nums text-[var(--accent)]">
-          {{ formatRupiah(store.calculatedPrice) }}
-        </p>
-      </div>
-      <BaseButton size="md" :disabled="!canProceed || isSubmitting" @click="proceedToPayment">
-        {{ isSubmitting ? 'Membuat Order…' : 'Lanjut ke Pembayaran' }}
+    <div class="flex items-center justify-end rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+      <BaseButton size="md" :disabled="!canProceed" @click="router.push(`/dashboard/booking/${store.psikolog?.slug}/jadwal`)">
+        Lanjut ke Jadwal
         <ArrowRightIcon class="h-3.5 w-3.5" />
       </BaseButton>
     </div>

@@ -22,6 +22,81 @@ const isSubmitting = ref(false)
 const error = ref('')
 const message = ref('')
 
+// ── Permintaan booking menunggu persetujuan ─────────────────────────────
+const pendingRequests = ref<any[]>([])
+const loadingRequests = ref(false)
+const decidingId = ref<number | null>(null)
+const rejectOpen = ref(false)
+const rejectTarget = ref<any>(null)
+const rejectReason = ref('')
+
+async function fetchPendingRequests() {
+  loadingRequests.value = true
+  try {
+    const res = await apiFetch('psikolog/bookings?status=pending_psikolog&per_page=50')
+    pendingRequests.value = res.data?.data || res.data || []
+  } catch (e) {
+    console.error('Failed fetching pending requests', e)
+  } finally {
+    loadingRequests.value = false
+  }
+}
+
+async function approveRequest(booking: any) {
+  decidingId.value = booking.id
+  error.value = ''
+  try {
+    await apiFetch(`psikolog/bookings/${booking.id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'confirmed' }),
+    })
+    message.value = 'Pengajuan disetujui — pasien telah dinotifikasi.'
+    await Promise.all([fetchPendingRequests(), fetchSchedules()])
+  } catch (e: any) {
+    error.value = e.message || 'Gagal menyetujui pengajuan'
+  } finally {
+    decidingId.value = null
+  }
+}
+
+function openReject(booking: any) {
+  rejectTarget.value = booking
+  rejectReason.value = ''
+  rejectOpen.value = true
+}
+
+async function submitReject() {
+  if (!rejectTarget.value) return
+  decidingId.value = rejectTarget.value.id
+  error.value = ''
+  try {
+    await apiFetch(`psikolog/bookings/${rejectTarget.value.id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        status: 'rejected',
+        rejected_reason: rejectReason.value || 'Jadwal tidak dapat disetujui',
+      }),
+    })
+    rejectOpen.value = false
+    rejectTarget.value = null
+    message.value = 'Pengajuan ditolak — pasien telah dinotifikasi.'
+    await fetchPendingRequests()
+  } catch (e: any) {
+    error.value = e.message || 'Gagal menolak pengajuan'
+  } finally {
+    decidingId.value = null
+  }
+}
+
+function formatRequestDate(d: string) {
+  if (!d) return ''
+  return new Date(d).toLocaleDateString('id-ID', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
+}
+
 const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
 const form = ref({
@@ -44,6 +119,7 @@ async function fetchSchedules() {
 
 onMounted(() => {
   fetchSchedules()
+  fetchPendingRequests()
 })
 
 async function toggleAvailable(sched: any) {
@@ -112,6 +188,54 @@ async function deleteSchedule(id: number) {
       <CheckCircleIcon class="h-4 w-4 shrink-0" />
       {{ message }}
     </div>
+
+    <!-- ================= PERMINTAAN MENUNGGU PERSETUJUAN ================= -->
+    <BaseCard v-if="!loadingRequests && pendingRequests.length > 0" class="mb-5 border-amber-500/30">
+      <div class="mb-3 flex items-center gap-2">
+        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-xs">🔔</span>
+        <h2 class="text-sm font-semibold text-[var(--text)]">
+          Permintaan Menunggu Persetujuan
+          <span class="ml-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+            {{ pendingRequests.length }}
+          </span>
+        </h2>
+      </div>
+
+      <div class="space-y-2.5">
+        <div
+          v-for="req in pendingRequests"
+          :key="req.id"
+          class="flex flex-col justify-between gap-3 rounded-xl border border-[var(--line)] p-3.5 md:flex-row md:items-center"
+        >
+          <div class="min-w-0">
+            <p class="truncate text-xs font-semibold text-[var(--text)]">
+              {{ req.pasien?.name || 'Pasien' }}
+              <span class="ml-1.5 font-normal text-[10px] text-[var(--muted)]">
+                {{ req.consultation_type === 'offline' ? 'Offline' : 'Video' }} · {{ req.duration_minutes ?? 60 }} menit
+              </span>
+            </p>
+            <p class="mt-0.5 text-[11px] tabular-nums text-[var(--muted)]">
+              {{ formatRequestDate(req.booking_date) }} · {{ req.start_time }}–{{ req.end_time }} WIB
+            </p>
+          </div>
+
+          <div class="flex shrink-0 items-center gap-2">
+            <BaseButton size="sm" :disabled="decidingId === req.id" @click="approveRequest(req)">
+              {{ decidingId === req.id ? 'Memproses…' : 'Setujui' }}
+            </BaseButton>
+            <BaseButton
+              size="sm"
+              variant="ghost"
+              class="!text-rose-600 dark:!text-rose-400 hover:!bg-rose-500/10"
+              :disabled="decidingId === req.id"
+              @click="openReject(req)"
+            >
+              Tolak
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </BaseCard>
 
     <!-- Schedules list -->
     <div v-if="loading" class="space-y-3">
@@ -197,6 +321,38 @@ async function deleteSchedule(id: number) {
           {{ isSubmitting ? 'Menyimpan…' : 'Simpan Jadwal' }}
         </BaseButton>
       </form>
+    </BaseModal>
+
+    <!-- ================= MODAL TOLAK PENGAJUAN ================= -->
+    <BaseModal
+      v-model:open="rejectOpen"
+      title="Tolak Pengajuan Konsultasi"
+      max-width="max-w-md"
+    >
+      <div class="space-y-4">
+        <p class="text-xs leading-relaxed text-[var(--muted)]">
+          Pengajuan dari <strong class="text-[var(--text)]">{{ rejectTarget?.pasien?.name }}</strong>
+          akan ditolak dan pasien diberi tahu melalui WhatsApp.
+        </p>
+        <div>
+          <label class="field-label">Alasan Penolakan</label>
+          <textarea
+            v-model="rejectReason"
+            rows="3"
+            maxlength="500"
+            placeholder="Contoh: jadwal bentrok, sedang cuti…"
+            class="field-input resize-none"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <BaseButton variant="secondary" size="md" class="flex-1" @click="rejectOpen = false">
+            Kembali
+          </BaseButton>
+          <BaseButton variant="danger" size="md" class="flex-1" :disabled="decidingId !== null" @click="submitReject">
+            {{ decidingId !== null ? 'Memproses…' : 'Tolak Pengajuan' }}
+          </BaseButton>
+        </div>
+      </div>
     </BaseModal>
   </div>
 </template>
