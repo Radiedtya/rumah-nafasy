@@ -27,6 +27,30 @@ class BookingController extends Controller
     ) {}
 
     /**
+     * Ringkasan ketersediaan per-tanggal + 5 rekomendasi slot terdekat.
+     * Dipakai kalender booking (tanda ✓/✕) & kartu rekomendasi.
+     */
+    public function availability(Request $request, int $psikologId)
+    {
+        $request->validate([
+            'from' => ['required', 'date'],
+            'to' => ['required', 'date', 'after_or_equal:from'],
+            'duration_minutes' => ['nullable', 'integer', 'min:15', 'max:240'],
+        ]);
+
+        $psikolog = User::role('psikolog')->with('psikologProfile')->findOrFail($psikologId);
+
+        $summary = $this->bookingService->getAvailabilitySummary(
+            $psikolog,
+            $request->from,
+            $request->to,
+            (int) ($request->get('duration_minutes', 60)),
+        );
+
+        return $this->successResponse($summary, 'Ringkasan ketersediaan');
+    }
+
+    /**
      * Get available slots for a psikolog on a specific date.
      */
     public function availableSlots(Request $request, int $psikologId)
