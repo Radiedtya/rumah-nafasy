@@ -51,6 +51,71 @@ onMounted(() => {
   fetchBookings()
 })
 
+// ── Persetujuan pengajuan booking (alur tanpa pembayaran) ─────────────────
+const decidingId = ref<number | null>(null)
+const rejectOpen = ref(false)
+const rejectTarget = ref<any>(null)
+const rejectReason = ref('')
+
+async function decideRequest(booking: any, decision: 'confirmed' | 'rejected') {
+  if (decision === 'rejected') {
+    rejectTarget.value = booking
+    rejectReason.value = ''
+    rejectOpen.value = true
+    return
+  }
+  decidingId.value = booking.id
+  error.value = ''
+  try {
+    await apiFetch(`psikolog/bookings/${booking.id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'confirmed' }),
+    })
+    message.value = `Pengajuan dari ${booking.pasien?.name || 'pasien'} disetujui — pasien telah diberi tahu via WhatsApp.`
+    await fetchBookings()
+  } catch (err: any) {
+    error.value = err.message || 'Gagal menyetujui pengajuan'
+  } finally {
+    decidingId.value = null
+  }
+}
+
+async function submitReject() {
+  if (!rejectTarget.value) return
+  decidingId.value = rejectTarget.value.id
+  error.value = ''
+  try {
+    await apiFetch(`psikolog/bookings/${rejectTarget.value.id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        status: 'rejected',
+        rejected_reason: rejectReason.value || 'Jadwal tidak dapat disetujui',
+      }),
+    })
+    rejectOpen.value = false
+    rejectTarget.value = null
+    message.value = 'Pengajuan ditolak — pasien telah diberi tahu beserta alasan.'
+    await fetchBookings()
+  } catch (err: any) {
+    error.value = err.message || 'Gagal menolak pengajuan'
+  } finally {
+    decidingId.value = null
+  }
+}
+
+function categoryLabel(booking: any): string {
+  return booking.requested_category?.name || booking.order?.category_name || 'Kategori fleksibel'
+}
+
+function durationLabel(booking: any): string {
+  const m = booking.duration_minutes ?? booking.order?.duration_minutes
+  return m ? `${m} Menit` : '60 Menit'
+}
+
+function typeLabel(booking: any): string {
+  return booking.consultation_type === 'offline' ? 'Offline · Tatap Muka' : 'Video Call'
+}
+
 async function startConsultation(booking: any) {
   try {
     await apiFetch(`psikolog/bookings/${booking.id}/consultation/start`, {
@@ -167,7 +232,10 @@ function formatDate(d: string) {
         <div class="min-w-0 space-y-3">
           <div class="flex flex-wrap items-center gap-2">
             <StatusPill :status="booking.status" />
-            <span class="font-mono text-[10px] text-[var(--muted)]">
+            <span
+              v-if="booking.order?.order_number"
+              class="font-mono text-[10px] text-[var(--muted)]"
+            >
               {{ booking.order?.order_number }}
             </span>
           </div>
@@ -179,7 +247,7 @@ function formatDate(d: string) {
                 {{ booking.pasien?.name }}
               </h3>
               <p class="truncate text-[11px] text-[var(--muted)]">
-                {{ booking.order?.category_name }} · {{ booking.order?.duration_name }}
+                {{ typeLabel(booking) }} · {{ categoryLabel(booking) }} · {{ durationLabel(booking) }}
               </p>
             </div>
           </div>
@@ -198,27 +266,50 @@ function formatDate(d: string) {
 
         <!-- Actions -->
         <div class="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          <a
-            v-if="booking.room_id"
-            :href="`https://meet.jit.si/${booking.room_id}`"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
-          >
-            <VideoCameraIcon class="h-3.5 w-3.5" />
-            Ruang Video
-            <ArrowTopRightOnSquareIcon class="h-3 w-3" />
-          </a>
+          <!-- Pengajuan menunggu persetujuan: TERIMA / TOLAK (ruang video belum boleh) -->
+          <template v-if="booking.status === 'pending_psikolog'">
+            <BaseButton
+              size="sm"
+              :disabled="decidingId === booking.id"
+              @click="decideRequest(booking, 'confirmed')"
+            >
+              <CheckCircleIcon class="h-3.5 w-3.5" />
+              Terima Pengajuan
+            </BaseButton>
+            <BaseButton
+              variant="ghost"
+              size="sm"
+              class="!text-rose-600 dark:!text-rose-400 hover:!bg-rose-500/10"
+              :disabled="decidingId === booking.id"
+              @click="decideRequest(booking, 'rejected')"
+            >
+              Tolak
+            </BaseButton>
+          </template>
 
-          <BaseButton
-            v-if="booking.status === 'confirmed' && !booking.consultation"
-            variant="secondary"
-            size="sm"
-            @click="startConsultation(booking)"
-          >
-            <PlayIcon class="h-3.5 w-3.5 text-[var(--muted)]" />
-            Mulai Sesi
-          </BaseButton>
+          <template v-else>
+            <a
+              v-if="booking.room_id && booking.consultation_type !== 'offline' && ['confirmed', 'in_progress'].includes(booking.status)"
+              :href="`https://meet.jit.si/${booking.room_id}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
+            >
+              <VideoCameraIcon class="h-3.5 w-3.5" />
+              Ruang Video
+              <ArrowTopRightOnSquareIcon class="h-3 w-3" />
+            </a>
+
+            <BaseButton
+              v-if="booking.status === 'confirmed' && !booking.consultation"
+              variant="secondary"
+              size="sm"
+              @click="startConsultation(booking)"
+            >
+              <PlayIcon class="h-3.5 w-3.5 text-[var(--muted)]" />
+              Mulai Sesi
+            </BaseButton>
+          </template>
 
           <BaseButton
             v-if="booking.consultation"
@@ -299,6 +390,40 @@ function formatDate(d: string) {
             @click="saveNote"
           >
             {{ isSavingNote ? 'Menyimpan (Enkripsi)…' : 'Simpan Catatan Terenkripsi' }}
+          </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
+
+    <!-- ================= MODAL TOLAK PENGAJUAN ================= -->
+    <BaseModal
+      v-model:open="rejectOpen"
+      title="Tolak Pengajuan Konsultasi"
+      max-width="max-w-md"
+    >
+      <div class="space-y-4">
+        <p class="text-xs leading-relaxed text-[var(--muted)]">
+          Pengajuan dari <strong class="text-[var(--text)]">{{ rejectTarget?.pasien?.name }}</strong>
+          ({{ rejectTarget ? formatDate(rejectTarget.booking_date) : '' }}
+          {{ rejectTarget?.start_time }}–{{ rejectTarget?.end_time }} WIB)
+          akan ditolak dan pasien diberi tahu via WhatsApp. Slot akan dilepas.
+        </p>
+        <div>
+          <label class="field-label">Alasan Penolakan</label>
+          <textarea
+            v-model="rejectReason"
+            rows="3"
+            maxlength="500"
+            placeholder="Contoh: jadwal bentrok, kuota penuh…"
+            class="field-input resize-none"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <BaseButton variant="secondary" size="md" class="flex-1" @click="rejectOpen = false">
+            Kembali
+          </BaseButton>
+          <BaseButton variant="danger" size="md" class="flex-1" :disabled="decidingId !== null" @click="submitReject">
+            {{ decidingId !== null ? 'Memproses…' : 'Tolak Pengajuan' }}
           </BaseButton>
         </div>
       </div>

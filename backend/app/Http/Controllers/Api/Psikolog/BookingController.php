@@ -15,7 +15,7 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $query = Booking::where('psikolog_id', $request->user()->id)
-            ->with(['order.category', 'order.duration', 'pasien', 'consultation']);
+            ->with(['order.category', 'order.duration', 'requestedCategory', 'pasien', 'consultation']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
