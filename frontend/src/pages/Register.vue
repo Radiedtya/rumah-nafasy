@@ -232,7 +232,7 @@ async function handleRegister() {
   errors.value = {}
 
   try {
-    await auth.register({
+    const result = await auth.register({
       name: name.value.trim(),
       email: email.value.trim(),
       password: password.value,
@@ -240,7 +240,15 @@ async function handleRegister() {
       role: 'pasien',
       turnstile_token: turnstileToken.value!,
     })
-    router.push('/dashboard')
+    // Pendaftaran disimpan PENDING — akun baru dibuat setelah OTP benar.
+    // verify_handle = pengenal sesi OTP yang wajib dibawa ke halaman verifikasi.
+    router.push({
+      path: '/verify-email',
+      query: {
+        email: result.email ?? email.value.trim(),
+        vh: result.verify_handle ?? '',
+      },
+    })
   } catch (err: any) {
     resetTurnstile()
     if (err.errors) {

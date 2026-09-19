@@ -19,8 +19,8 @@ class UpdateProfileRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20', "unique:users,phone,{$userId}"],
             'avatar' => ['sometimes', 'image', 'max:2048'],
-            'current_password' => ['nullable', 'string', 'required_with:password'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            // password / current_password TIDAK lagi diterima di sini —
+            // perubahan kredensial lewat PUT auth/password (PasswordController).
         ];
     }
 
@@ -30,9 +30,6 @@ class UpdateProfileRequest extends FormRequest
             'phone.unique' => 'Nomor HP sudah digunakan',
             'avatar.image' => 'File harus berupa gambar',
             'avatar.max' => 'Ukuran gambar maksimal 2MB',
-            'password.min' => 'Password minimal 8 karakter',
-            'password.confirmed' => 'Konfirmasi password tidak cocok',
-            'current_password.required_with' => 'Password lama wajib diisi untuk mengganti password',
         ];
     }
 }

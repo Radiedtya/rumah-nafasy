@@ -36,6 +36,15 @@ return [
     ],
 
     /*
+    | Cloudflare Turnstile (anti-bot register).
+    | Secret diverifikasi server-side di RegisterRequest — tanpa ini,
+    | token dari frontend hanya diasumsikan benar (celah tertutup).
+    */
+    'turnstile' => [
+        'secret' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
+    /*
     | Login Google (Socialite). Dapatkan kredensial di
     | https://console.cloud.google.com/apis/credentials → OAuth client ID
     | → Application type: Web application.

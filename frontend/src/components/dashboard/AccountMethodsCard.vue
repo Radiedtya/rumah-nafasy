@@ -20,7 +20,9 @@ import {
  * - Hubungkan Google: minta URL connect ber-token dari API (auth:sanctum)
  *   → popup → backend menautkan google_id ke user yang login.
  * - Putuskan Google: wajib konfirmasi password (server menolak tanpa itu).
- * - Atur password: untuk akun Google murni yang belum punya password.
+ * - Ubah/Atur password: endpoint khusus PUT auth/password.
+ *     • User ber-password → wajib password lama.
+ *     • Akun Google murni → wajib OTP email (Resend) yang dikirim server.
  */
 
 const auth = useAuthStore()
@@ -122,46 +124,148 @@ async function submitDisconnect() {
   }
 }
 
-// ── Atur password (akun Google murni) ────────────────────────────────────────
+// ── Ubah / Atur password (endpoint khusus PUT auth/password) ─────────────────
 const passwordOpen = ref(false)
+const passwordError = ref('')
+const passwordSuccess = ref('')
+
+// Form umum
 const newPassword = ref('')
 const confirmNewPassword = ref('')
-const settingPassword = ref(false)
-const passwordError = ref('')
+const savingPassword = ref(false)
+
+// Jalur user ber-password
+const currentPassword = ref('')
+
+// Jalur akun Google murni (OTP email)
+const otpStep = ref<'idle' | 'code-sent'>('idle')
+const otpCode = ref('')
+const otpToken = ref('')
+const sendingOtp = ref(false)
+const otpCooldown = ref(0)
+let otpCooldownTimer: ReturnType<typeof setInterval> | null = null
+
+const isSetMode = computed(() => !hasPassword.value)
+
+function openPasswordModal() {
+  passwordOpen.value = true
+  passwordError.value = ''
+  passwordSuccess.value = ''
+  currentPassword.value = ''
+  newPassword.value = ''
+  confirmNewPassword.value = ''
+  otpCode.value = ''
+  otpToken.value = ''
+  otpStep.value = 'idle'
+}
+
+function closePasswordModal() {
+  passwordOpen.value = false
+  passwordError.value = ''
+  passwordSuccess.value = ''
+  if (otpCooldownTimer) {
+    clearInterval(otpCooldownTimer)
+    otpCooldownTimer = null
+  }
+}
 
 function validateNewPassword(): boolean {
   const v = newPassword.value
-  if (!v) { passwordError.value = 'Password wajib diisi'; return false }
+  if (!v) { passwordError.value = 'Password baru wajib diisi'; return false }
   if (v.length < 8) { passwordError.value = 'Password minimal 8 karakter'; return false }
   if (!/[A-Z]/.test(v)) { passwordError.value = 'Harus mengandung 1 huruf kapital'; return false }
   if (!/[a-z]/.test(v)) { passwordError.value = 'Harus mengandung 1 huruf kecil'; return false }
   if (!/[0-9]/.test(v)) { passwordError.value = 'Harus mengandung 1 angka'; return false }
   if (v !== confirmNewPassword.value) { passwordError.value = 'Konfirmasi tidak cocok'; return false }
+
+  if (!isSetMode.value && !currentPassword.value) {
+    passwordError.value = 'Password saat ini wajib diisi'
+    return false
+  }
+  if (isSetMode.value && otpStep.value !== 'code-sent') {
+    passwordError.value = 'Minta kode verifikasi email terlebih dahulu'
+    return false
+  }
+  if (isSetMode.value && otpCode.value.replace(/\D/g, '').length !== 6) {
+    passwordError.value = 'Kode verifikasi harus 6 digit'
+    return false
+  }
+
   passwordError.value = ''
   return true
 }
 
-async function submitSetPassword() {
-  if (!validateNewPassword()) return
-  settingPassword.value = true
-  error.value = ''
+/** Akun Google murni: minta OTP email → server mengirim kode via Resend. */
+async function requestSetPasswordOtp() {
+  sendingOtp.value = true
+  passwordError.value = ''
   try {
-    // Endpoint profile standar: password tanpa current_password (belum punya)
-    await apiFetch('auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify({ password: newPassword.value }),
-    })
-    await auth.fetchMe()
-    passwordOpen.value = false
-    newPassword.value = ''
-    confirmNewPassword.value = ''
-    message.value = 'Password berhasil diatur — kini bisa login email + password.'
+    const res = await auth.sendSetPasswordOtp()
+    otpToken.value = res.otp_token
+    otpStep.value = 'code-sent'
+    passwordSuccess.value = `Kode verifikasi dikirim ke ${res.email}.`
+    startOtpCooldown(res.retry_after ?? 60)
   } catch (err: any) {
-    passwordError.value = err.errors
-      ? Object.values(err.errors).flat()[0] as string
-      : (err.message || 'Gagal mengatur password')
+    const retry = err?.errors?.retry_after?.[0]
+    if (err?.status === 429 && typeof retry === 'number') {
+      startOtpCooldown(retry)
+    }
+    passwordError.value = err?.message || 'Gagal mengirim kode verifikasi.'
   } finally {
-    settingPassword.value = false
+    sendingOtp.value = false
+  }
+}
+
+function startOtpCooldown(seconds: number) {
+  otpCooldown.value = Math.max(0, Math.floor(seconds))
+  if (otpCooldownTimer) clearInterval(otpCooldownTimer)
+  otpCooldownTimer = setInterval(() => {
+    if (otpCooldown.value <= 0) {
+      if (otpCooldownTimer) clearInterval(otpCooldownTimer)
+      otpCooldownTimer = null
+      return
+    }
+    otpCooldown.value--
+  }, 1000)
+}
+
+async function submitPassword() {
+  if (!validateNewPassword()) return
+
+  savingPassword.value = true
+  passwordError.value = ''
+  passwordSuccess.value = ''
+
+  try {
+    if (isSetMode.value) {
+      // Akun Google murni — set password pertama kali, dijaga OTP email
+      await auth.updatePassword({
+        otp_token: otpToken.value,
+        otp_code: otpCode.value.replace(/\D/g, ''),
+        password: newPassword.value,
+        password_confirmation: confirmNewPassword.value,
+      })
+    } else {
+      // User ber-password — dijaga password lama
+      await auth.updatePassword({
+        current_password: currentPassword.value,
+        password: newPassword.value,
+        password_confirmation: confirmNewPassword.value,
+      })
+    }
+
+    await auth.fetchMe()
+    message.value = isSetMode.value
+      ? 'Password berhasil diatur — kini bisa login email + password.'
+      : 'Password berhasil diubah. Sesi di perangkat lain telah dikeluarkan.'
+
+    closePasswordModal()
+  } catch (err: any) {
+    passwordError.value = err?.errors
+      ? (Object.values(err.errors).flat()[0] as string) || err.message
+      : (err?.message || 'Gagal menyimpan password')
+  } finally {
+    savingPassword.value = false
   }
 }
 </script>
@@ -222,7 +326,7 @@ async function submitSetPassword() {
     <p v-if="hasGoogle && !hasPassword" class="flex items-start gap-2 rounded-xl bg-amber-500/8 px-3.5 py-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">
       <ExclamationTriangleIcon class="mt-0.5 h-3.5 w-3.5 shrink-0" />
       Akun ini hanya bisa masuk lewat Google. Atur password dulu sebelum memutus Google —
-      <button type="button" class="font-semibold underline" @click="passwordOpen = true">atur sekarang</button>
+      <button type="button" class="font-semibold underline" @click="openPasswordModal">atur sekarang</button>
     </p>
 
     <!-- Password -->
@@ -236,8 +340,8 @@ async function submitSetPassword() {
           </p>
         </div>
       </div>
-      <BaseButton v-if="!hasPassword" size="sm" variant="secondary" @click="passwordOpen = true">
-        Atur Password
+      <BaseButton size="sm" variant="secondary" @click="openPasswordModal">
+        {{ hasPassword ? 'Ubah Password' : 'Atur Password' }}
       </BaseButton>
     </div>
 
@@ -274,20 +378,73 @@ async function submitSetPassword() {
       </div>
     </transition>
 
-    <!-- Modal: atur password -->
+    <!-- Modal: ubah / atur password -->
     <transition name="fade">
       <div v-if="passwordOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="w-full max-w-sm rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl">
-          <h3 class="mb-2 text-sm font-semibold text-[var(--text)]">Atur Password</h3>
+          <h3 class="mb-2 text-sm font-semibold text-[var(--text)]">
+            {{ isSetMode ? 'Atur Password' : 'Ubah Password' }}
+          </h3>
           <p class="mb-4 text-xs leading-relaxed text-[var(--muted)]">
-            Setelah diatur, Anda bisa masuk dengan email + password maupun Google.
+            <template v-if="isSetMode">
+              Akun ini masuk lewat Google. Untuk bisa login dengan email + password, atur password —
+              kami kirim kode verifikasi ke email Anda untuk menjaga keamanan.
+            </template>
+            <template v-else>
+              Setelah diubah, sesi di perangkat lain akan otomatis dikeluarkan.
+            </template>
           </p>
+
           <div class="space-y-2">
+            <!-- Jalur: user ber-password -->
+            <input
+              v-if="!isSetMode"
+              v-model="currentPassword"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Password saat ini"
+              class="field-input"
+            />
+
+            <!-- Jalur: akun Google murni — OTP email -->
+            <template v-if="isSetMode">
+              <div v-if="otpStep !== 'code-sent'" class="rounded-lg bg-[var(--muted)]/8 p-3">
+                <button
+                  type="button"
+                  class="h-9 w-full rounded-lg bg-[var(--accent)] text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  :disabled="sendingOtp || otpCooldown > 0"
+                  @click="requestSetPasswordOtp"
+                >
+                  {{ sendingOtp
+                    ? 'Mengirim…'
+                    : otpCooldown > 0
+                      ? `Tunggu ${otpCooldown}s…`
+                      : 'Kirim Kode Verifikasi ke Email' }}
+                </button>
+              </div>
+              <input
+                v-else
+                v-model="otpCode"
+                type="text"
+                inputmode="numeric"
+                maxlength="6"
+                autocomplete="one-time-code"
+                placeholder="Kode 6 digit dari email"
+                class="field-input field-input--otp"
+              />
+              <p v-if="otpStep === 'code-sent' && otpCooldown <= 0" class="text-[10.5px] text-[var(--muted)]">
+                Tidak menerima kode?
+                <button type="button" class="font-semibold text-[var(--accent)] hover:underline" @click="requestSetPasswordOtp">
+                  Kirim ulang
+                </button>
+              </p>
+            </template>
+
             <input
               v-model="newPassword"
               type="password"
               autocomplete="new-password"
-              placeholder="Password baru (min. 8, kapital + angka)"
+              placeholder="Password baru (min. 8, kapital + kecil + angka)"
               class="field-input"
             />
             <input
@@ -296,22 +453,24 @@ async function submitSetPassword() {
               autocomplete="new-password"
               placeholder="Ulangi password baru"
               class="field-input"
-              @keyup.enter="submitSetPassword"
+              @keyup.enter="submitPassword"
             />
             <p v-if="passwordError" class="text-[11px] text-rose-500">{{ passwordError }}</p>
+            <p v-if="passwordSuccess" class="text-[11px] text-emerald-500">{{ passwordSuccess }}</p>
           </div>
+
           <div class="mt-4 flex gap-3">
             <button
               type="button"
               class="h-9 flex-1 rounded-lg border border-[var(--line)] text-xs font-medium text-[var(--text)] transition-colors hover:bg-[var(--muted)]/10"
-              @click="passwordOpen = false; passwordError = ''"
+              @click="closePasswordModal"
             >Batal</button>
             <button
               type="button"
               class="h-9 flex-1 rounded-lg bg-[var(--accent)] text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              :disabled="settingPassword"
-              @click="submitSetPassword"
-            >{{ settingPassword ? 'Menyimpan…' : 'Simpan Password' }}</button>
+              :disabled="savingPassword || (isSetMode && otpStep !== 'code-sent')"
+              @click="submitPassword"
+            >{{ savingPassword ? 'Menyimpan…' : 'Simpan Password' }}</button>
           </div>
         </div>
       </div>
@@ -334,6 +493,13 @@ async function submitSetPassword() {
   box-sizing: border-box;
 }
 .field-input:focus { border-color: var(--accent); }
+.field-input--otp {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  font-variant-numeric: tabular-nums;
+}
 
 .fade-enter-active, .fade-leave-active { transition: opacity 200ms; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
