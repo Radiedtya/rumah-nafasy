@@ -1,16 +1,18 @@
 <?php
 
-use App\Http\Controllers\Api\Auth\RegisterController;
-use App\Http\Controllers\Api\Auth\LoginController;
-use App\Http\Controllers\Api\Auth\GoogleAuthController;
-use App\Http\Controllers\Api\Auth\ProfileController;
-use App\Http\Controllers\Api\Public;
-use App\Http\Controllers\Api\Psikolog;
 use App\Http\Controllers\Api\Admin;
+use App\Http\Controllers\Api\Auth\EmailVerificationController;
+use App\Http\Controllers\Api\Auth\GoogleAuthController;
+use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\PasswordController;
+use App\Http\Controllers\Api\Auth\ProfileController;
+use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\MeetingController;
+use App\Http\Controllers\Api\Pasien\BookingController;
 use App\Http\Controllers\Api\Pasien\OrderController;
 use App\Http\Controllers\Api\Pasien\PaymentController;
-use App\Http\Controllers\Api\Pasien\BookingController;
+use App\Http\Controllers\Api\Psikolog;
+use App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Api\Webhook\MidtransController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +28,16 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [LoginController::class, 'login'])
             ->middleware('throttle:5,1');
 
+        // ── Verifikasi email via OTP (Resend) ────────────────────────────
+        // Rate limiter `otp` (lihat AppServiceProvider): per-IP + per-email,
+        // ketat — anti spam dan brute-force OTP.
+        Route::post('/email/verify', [EmailVerificationController::class, 'verify'])
+            ->middleware('throttle:otp');
+        Route::post('/email/resend', [EmailVerificationController::class, 'resend'])
+            ->middleware('throttle:otp');
+        Route::get('/email/status', [EmailVerificationController::class, 'status'])
+            ->middleware('throttle:otp');
+
         // Menukar kode OAuth Google (sekali pakai, dari session backend)
         // menjadi Sanctum token. Kode dibawa SPA dari redirect callback.
         Route::post('/google/exchange', [GoogleAuthController::class, 'exchange'])
@@ -37,6 +49,13 @@ Route::prefix('v1')->group(function () {
             Route::put('/profile', [ProfileController::class, 'update']);
             Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
             Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
+
+            // ── Ubah / atur password (halaman Settings/Profil) ───────────
+            // Rate limiter `password` ketat — endpoint sensitif.
+            Route::put('/password', [PasswordController::class, 'update'])
+                ->middleware('throttle:password');
+            Route::post('/password/set-otp', [PasswordController::class, 'sendSetPasswordOtp'])
+                ->middleware('throttle:otp');
 
             // Penghubungan akun Google (settings profil)
             Route::post('/google/connect/start', [GoogleAuthController::class, 'connectStart']);

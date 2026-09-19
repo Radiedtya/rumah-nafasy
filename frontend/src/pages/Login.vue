@@ -110,6 +110,12 @@ async function handleLogin() {
     const redirect = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') ? raw : '/dashboard'
     router.push(redirect)
   } catch (err: any) {
+    // ── Gerbang verifikasi email: akun belum verifikasi OTP ─────────────
+    if (err.status === 403 && err.errors?.code?.[0] === 'email_unverified') {
+      router.push({ path: '/verify-email', query: { email: email.value.trim() } })
+      return
+    }
+
     if (err.errors) {
       errors.value = {
         email: err.errors.email?.[0],

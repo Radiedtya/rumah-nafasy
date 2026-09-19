@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Api\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -34,8 +35,8 @@ class GoogleAuthController extends Controller
      *   tidak ada pengambilalihan akun secara diam-diam.
      * - Kode exchange: sekali pakai, TTL 10 menit, disimpan Cache server.
      */
-
     private const CODE_TTL_MINUTES = 10;
+
     private const CONNECT_TTL_MINUTES = 10;
 
     public function redirect(Request $request): RedirectResponse
@@ -59,10 +60,10 @@ class GoogleAuthController extends Controller
             // Connect wajib membawa token one-time yang diterbitkan
             // endpoint terautentikasi (auth:sanctum) — tidak bisa dipanggil
             // sembarangan untuk menautkan akun paksa.
-            $userId = Cache::pull('google_connect_' . $request->query('token'));
+            $userId = Cache::pull('google_connect_'.$request->query('token'));
 
-            if (!$userId) {
-                return redirect()->away($this->originOf($landing) . $landingPath . $sep . 'google=token');
+            if (! $userId) {
+                return redirect()->away($this->originOf($landing).$landingPath.$sep.'google=token');
             }
 
             session(['google_connect_user_id' => (int) $userId]);
@@ -88,7 +89,7 @@ class GoogleAuthController extends Controller
 
         // Semua kegagalan kembali ke URL landing SPA (popup ikut tertutup rapi)
         $fail = fn (string $kind): RedirectResponse => redirect()->away(
-            $spaOrigin . $landingPath . $sep . 'google=' . $kind
+            $spaOrigin.$landingPath.$sep.'google='.$kind
         );
 
         try {
@@ -100,7 +101,7 @@ class GoogleAuthController extends Controller
             return $fail('error');
         }
 
-        if (!$googleUser->getEmail()) {
+        if (! $googleUser->getEmail()) {
             return $fail('error');
         }
 
@@ -108,7 +109,7 @@ class GoogleAuthController extends Controller
             // ── Jalur CONNECT: tautkan Google ke user yang meminta ──
             $user = User::find($connectUserId);
 
-            if (!$user || !$user->is_active) {
+            if (! $user || ! $user->is_active) {
                 return $fail('error');
             }
 
@@ -135,7 +136,7 @@ class GoogleAuthController extends Controller
             // ── Jalur LOGIN: no dead end — link atau buat ──
             $user = $this->findOrCreateUser($googleUser);
 
-            if (!$user->is_active) {
+            if (! $user->is_active) {
                 return $fail('blocked');
             }
         }
@@ -145,7 +146,7 @@ class GoogleAuthController extends Controller
         $code = Str::random(64);
         Cache::put("google_exchange_{$code}", $user->id, now()->addMinutes(self::CODE_TTL_MINUTES));
 
-        return redirect()->away($spaOrigin . $landingPath . $sep . 'code=' . $code);
+        return redirect()->away($spaOrigin.$landingPath.$sep.'code='.$code);
     }
 
     /**
@@ -163,7 +164,7 @@ class GoogleAuthController extends Controller
         $token = Str::random(64);
         Cache::put("google_connect_{$token}", $request->user()->id, now()->addMinutes(self::CONNECT_TTL_MINUTES));
 
-        $url = rtrim(config('app.url'), '/') . '/auth/google/redirect?' . http_build_query([
+        $url = rtrim(config('app.url'), '/').'/auth/google/redirect?'.http_build_query([
             'intent' => 'connect',
             'token' => $token,
             'redirect' => $landing,
@@ -185,22 +186,22 @@ class GoogleAuthController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->google_id) {
+        if (! $user->google_id) {
             return $this->errorResponse('Google belum terhubung ke akun ini', 422);
         }
 
-        if (!$user->password) {
+        if (! $user->password) {
             return $this->errorResponse('Atur password terlebih dahulu sebelum memutus Google', 422);
         }
 
-        if (!Hash::check((string) $request->input('password', ''), $user->password)) {
+        if (! Hash::check((string) $request->input('password', ''), $user->password)) {
             return $this->errorResponse('Password salah — konfirmasi diperlukan untuk memutus Google', 422);
         }
 
         $user->forceFill(['google_id' => null])->save();
 
         return $this->successResponse(
-            new \App\Http\Resources\UserResource($user->fresh()->load('roles', 'psikologProfile')),
+            new UserResource($user->fresh()->load('roles', 'psikologProfile')),
             'Akun Google berhasil diputus'
         );
     }
@@ -217,12 +218,12 @@ class GoogleAuthController extends Controller
 
         $userId = Cache::pull("google_exchange_{$request->code}"); // sekali pakai
 
-        if (!$userId) {
+        if (! $userId) {
             return $this->errorResponse('Kode login tidak valid, kedaluwarsa, atau sudah digunakan', 422);
         }
 
         $user = User::with('roles')->find($userId);
-        if (!$user || !$user->is_active) {
+        if (! $user || ! $user->is_active) {
             return $this->errorResponse('Akun tidak tersedia', 403);
         }
 
@@ -252,7 +253,7 @@ class GoogleAuthController extends Controller
         // 2. Email dikenal → auto-link (mekanisme "register Google → masuk akun lama")
         $user = User::where('email', $googleUser->getEmail())->first();
         if ($user) {
-            if (!$user->google_id) {
+            if (! $user->google_id) {
                 $user->forceFill([
                     'google_id' => $googleUser->getId(),
                     'email_verified_at' => $user->email_verified_at ?? now(),
@@ -287,7 +288,7 @@ class GoogleAuthController extends Controller
         $allowed = array_filter(array_map('trim', explode(',', (string) config('services.google.allowed_spa_origins'))));
         $default = rtrim(config('services.google.default_spa_origin') ?: config('app.url'), '/');
 
-        if (!$target) {
+        if (! $target) {
             return $default;
         }
 
@@ -307,10 +308,10 @@ class GoogleAuthController extends Controller
     {
         if ($url) {
             $parts = parse_url($url);
-            if (!empty($parts['host'])) {
-                $origin = strtolower(($parts['scheme'] ?? 'http') . '://' . $parts['host']);
+            if (! empty($parts['host'])) {
+                $origin = strtolower(($parts['scheme'] ?? 'http').'://'.$parts['host']);
                 if (isset($parts['port'])) {
-                    $origin .= ':' . $parts['port'];
+                    $origin .= ':'.$parts['port'];
                 }
 
                 return $origin;
@@ -325,7 +326,7 @@ class GoogleAuthController extends Controller
     /** Path+query landing; bila URL hanya origin, default ke path callback. */
     private function landingPathOf(?string $url): string
     {
-        if (!$url) {
+        if (! $url) {
             return '/auth/google/callback';
         }
 
@@ -336,6 +337,6 @@ class GoogleAuthController extends Controller
             return '/auth/google/callback';
         }
 
-        return $path . (isset($parts['query']) ? '?' . $parts['query'] : '');
+        return $path.(isset($parts['query']) ? '?'.$parts['query'] : '');
     }
 }

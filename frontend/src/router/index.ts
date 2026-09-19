@@ -68,6 +68,14 @@ export const routes: RouteRecordRaw[] = [
     beforeEnter: [guestOnly],
   },
   {
+    // Verifikasi email OTP — pendaftar metode email belum punya token,
+    // jadi guestOnly cocok (yang sudah verifikasi dibawa ke /login).
+    path: '/verify-email',
+    component: () => import('../pages/VerifyEmail.vue'),
+    meta: { ssg: false },
+    beforeEnter: [guestOnly],
+  },
+  {
     path: '/dashboard',
     component: DashboardLayout,
     meta: { ssg: false },
