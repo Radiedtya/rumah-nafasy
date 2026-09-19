@@ -40,6 +40,10 @@ const typeLabel = computed(() => (store.consultationType === 'offline' ? 'Offlin
           <dd class="font-medium text-[var(--text)]">{{ typeLabel }}</dd>
         </div>
         <div class="flex items-center justify-between gap-3">
+          <dt class="text-[var(--muted)]">Kategori</dt>
+          <dd class="font-medium text-[var(--text)]">{{ store.requestedCategory?.name ?? '—' }}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-3">
           <dt class="text-[var(--muted)]">Durasi</dt>
           <dd class="font-medium text-[var(--text)]">{{ store.durationMinutes }} menit</dd>
         </div>
@@ -52,9 +56,12 @@ const typeLabel = computed(() => (store.consultationType === 'offline' ? 'Offlin
             <template v-else>—</template>
           </dd>
         </div>
-        <div v-if="store.infoRate" class="flex items-center justify-between gap-3 border-t border-[var(--line)] pt-2.5">
-          <dt class="text-[var(--muted)]">Tarif (info)</dt>
-          <dd class="tabular-nums text-[var(--text)]">~ {{ formatRupiah(store.infoRate) }} / sesi</dd>
+        <div class="flex items-center justify-between gap-3 border-t border-[var(--line)] pt-2.5">
+          <dt class="text-[var(--muted)]">Acuan Biaya</dt>
+          <dd class="tabular-nums text-[var(--text)]">
+            <template v-if="store.estimateRate">~ {{ formatRupiah(store.estimateRate) }} / 60m</template>
+            <template v-else>Sepakatan</template>
+          </dd>
         </div>
       </dl>
 

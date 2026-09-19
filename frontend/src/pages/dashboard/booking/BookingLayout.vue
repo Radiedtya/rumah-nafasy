@@ -24,6 +24,16 @@ function currentStep(): 1 | 2 | 3 {
 }
 const step = computed(() => currentStep())
 
+async function loadCatalog() {
+  if (store.categories.length > 0) return
+  try {
+    const res = await apiFetch('public/categories')
+    store.categories = res.data || []
+  } catch (e) {
+    console.error('Failed loading booking catalog', e)
+  }
+}
+
 async function loadDetail() {
   store.startFor(slug.value)
   notFound.value = false
@@ -74,7 +84,7 @@ onMounted(async () => {
     }
   }
 
-  await loadDetail()
+  await Promise.all([loadCatalog(), loadDetail()])
   booted.value = true
 })
 </script>
