@@ -21,6 +21,7 @@ class User extends Authenticatable implements HasMedia
         'password',
         'phone',
         'avatar',
+        'google_id',
         'is_active',
         'phone_verified_at',
     ];

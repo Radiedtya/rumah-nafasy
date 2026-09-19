@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Auth\LoginController;
+use App\Http\Controllers\Api\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\Auth\ProfileController;
 use App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Api\Psikolog;
@@ -24,6 +25,11 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:5,1');
         Route::post('/login', [LoginController::class, 'login'])
             ->middleware('throttle:5,1');
+
+        // Menukar kode OAuth Google (sekali pakai, dari session backend)
+        // menjadi Sanctum token. Kode dibawa SPA dari redirect callback.
+        Route::post('/google/exchange', [GoogleAuthController::class, 'exchange'])
+            ->middleware('throttle:20,1');
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [LoginController::class, 'logout']);

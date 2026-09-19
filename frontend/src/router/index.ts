@@ -56,6 +56,12 @@ export const routes: RouteRecordRaw[] = [
     beforeEnter: [guestOnly],
   },
   {
+    // Callback Google di sisi SPA — menerima ?code= dari backend lalu tukar jadi token
+    path: '/auth/google/callback',
+    component: () => import('../pages/auth/GoogleCallback.vue'),
+    meta: { ssg: false },
+  },
+  {
     path: '/register',
     component: () => import('../pages/Register.vue'),
     meta: { ssg: false },
