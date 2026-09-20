@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Pasien;
 
 use App\Http\Controllers\Api\Controller;
 use App\Http\Requests\Pasien\CreateBookingRequest;
+use App\Http\Requests\Pasien\CreateDirectBookingRequest;
 use App\Http\Requests\Pasien\RescheduleBookingRequest;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
@@ -17,6 +18,7 @@ use App\Services\BookingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
@@ -25,18 +27,44 @@ class BookingController extends Controller
     ) {}
 
     /**
+     * Ringkasan ketersediaan per-tanggal + 5 rekomendasi slot terdekat.
+     * Dipakai kalender booking (tanda ✓/✕) & kartu rekomendasi.
+     */
+    public function availability(Request $request, int $psikologId)
+    {
+        $request->validate([
+            'from' => ['required', 'date'],
+            'to' => ['required', 'date', 'after_or_equal:from'],
+            'duration_minutes' => ['nullable', 'integer', 'min:15', 'max:240'],
+        ]);
+
+        $psikolog = User::role('psikolog')->with('psikologProfile')->findOrFail($psikologId);
+
+        $summary = $this->bookingService->getAvailabilitySummary(
+            $psikolog,
+            $request->from,
+            $request->to,
+            (int) ($request->get('duration_minutes', 60)),
+        );
+
+        return $this->successResponse($summary, 'Ringkasan ketersediaan');
+    }
+
+    /**
      * Get available slots for a psikolog on a specific date.
      */
     public function availableSlots(Request $request, int $psikologId)
     {
         $request->validate([
             'date' => ['required', 'date', 'after_or_equal:today'],
-            'duration' => ['nullable', 'integer', 'in:30,60,90'],
+            // Preset 30/60/90 atau permintaan khusus 15–240 menit
+            'duration_minutes' => ['nullable', 'integer', 'min:15', 'max:240'],
+            'duration' => ['nullable', 'integer', 'min:15', 'max:240'],
         ]);
 
         $psikolog = User::role('psikolog')->with('psikologProfile')->findOrFail($psikologId);
 
-        $duration = (int) $request->get('duration', 60);
+        $duration = (int) ($request->get('duration_minutes') ?? $request->get('duration', 60));
 
         $slots = $this->bookingService->getAvailableSlots(
             $psikolog,
@@ -58,7 +86,72 @@ class BookingController extends Controller
     }
 
     /**
-     * Create booking (pick schedule after payment).
+     * Booking langsung TANPA pembayaran (alur bisnis baru).
+     *
+     * Pasien memilih psikolog → paket (video/offline) → jadwal → selesai.
+     * Status awal `pending_psikolog`: slot diblokir & menunggu persetujuan
+     * psikolog. Pembayaran P2P dilakukan setelah sesi selesai — tidak diproses
+     * aplikasi.
+     */
+    public function storeDirect(CreateDirectBookingRequest $request)
+    {
+        $psikolog = User::role('psikolog')
+            ->whereHas('psikologProfile', function ($q) {
+                $q->where('status', 'verified')->where('is_available', true);
+            })
+            ->with('psikologProfile')
+            ->find($request->psikolog_id);
+
+        if (!$psikolog) {
+            return $this->errorResponse('Psikolog tidak tersedia', 422);
+        }
+
+        $durationMinutes = (int) $request->duration_minutes;
+        $startTime = $request->start_time;
+        $endTime = Carbon::parse($startTime)->addMinutes($durationMinutes)->format('H:i');
+
+        // Check psikolog availability on that day
+        if (!$this->bookingService->isPsikologAvailable($psikolog, $request->booking_date, $startTime, $endTime)) {
+            return $this->errorResponse('Psikolog tidak tersedia pada jadwal yang dipilih', 422);
+        }
+
+        // Check slot conflict (termasuk booking pending_psikolog lain)
+        if ($this->bookingService->hasConflict($psikolog, $request->booking_date, $startTime, $endTime)) {
+            return $this->errorResponse('Slot tidak tersedia, sudah diajukan/dipesan orang lain', 422);
+        }
+
+        $booking = DB::transaction(function () use ($request, $psikolog, $durationMinutes, $startTime, $endTime) {
+            return Booking::create([
+                'pasien_id' => $request->user()->id,
+                'psikolog_id' => $psikolog->id,
+                'consultation_type' => $request->consultation_type,
+                'duration_minutes' => $durationMinutes,
+                'requested_category_id' => $request->requested_category_id ?? null,
+                'booking_date' => $request->booking_date,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'room_id' => $request->consultation_type === 'video' ? 'room-' . Str::uuid()->toString() : null,
+                'status' => 'pending_psikolog',
+                'complaint_markdown' => $request->complaint_markdown, // keluhan Markdown dari langkah 2
+            ]);
+        });
+
+        $booking->load(['psikolog.psikologProfile', 'requestedCategory']);
+
+        app(FonnteService::class)->notifyUser(
+            $booking->psikolog,
+            WhatsAppMessages::bookingRequested($booking)
+        );
+
+        return $this->successResponse(
+            new BookingResource($booking),
+            'Pengajuan jadwal terkirim. Menunggu persetujuan psikolog.',
+            201
+        );
+    }
+
+    /**
+     * @deprecated Alur lama via order + pembayaran — dorman sesuai keputusan klien.
      */
     public function store(CreateBookingRequest $request, Order $order)
     {
@@ -138,7 +231,7 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $query = Booking::where('pasien_id', $request->user()->id)
-            ->with(['order.category', 'order.duration', 'psikolog.psikologProfile', 'consultation']);
+            ->with(['order.category', 'order.duration', 'requestedCategory', 'psikolog.psikologProfile', 'consultation']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -193,7 +286,8 @@ class BookingController extends Controller
             );
         }
 
-        $durationMinutes = $booking->order->duration->minutes;
+        // Alur baru: durasi tersimpan di booking; alur lama (order) tetap didukung
+        $durationMinutes = $booking->duration_minutes ?? $booking->order?->duration?->minutes ?? 60;
         $newStartTime = $request->start_time;
         $newEndTime = Carbon::parse($newStartTime)->addMinutes($durationMinutes)->format('H:i');
 
@@ -220,12 +314,13 @@ class BookingController extends Controller
             'rescheduled_by' => 'pasien',
         ]);
 
-        // Update booking
+        // Update booking. Status TIDAK berubah: pengajuan pending tetap
+        // pending (psikolog tetap harus menyetujui slot barunya).
         $booking->update([
             'booking_date' => $request->booking_date,
             'start_time' => $newStartTime,
             'end_time' => $newEndTime,
-            'status' => 'confirmed',
+            'duration_minutes' => $durationMinutes,
         ]);
 
         $booking->load(['order.category', 'order.duration', 'psikolog.psikologProfile', 'rescheduleLogs']);
@@ -262,14 +357,22 @@ class BookingController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        // Calculate refund
-        $consultationTime = Carbon::parse($booking->booking_date->format('Y-m-d') . ' ' . $booking->start_time);
-        $refundAmount = $this->bookingService->calculateRefundAmount($booking->order, $consultationTime);
-        $refundPercentage = $this->bookingService->getRefundPercentage($refundAmount, (float) $booking->order->calculated_price);
+        // Refund hanya relevan untuk alur lama (booking via order terbayar).
+        // Alur baru (tanpa pembayaran) cukup dibatalkan — tidak ada dana di aplikasi.
+        $refund = null;
+        $refundAmount = 0;
+        $refundPercentage = 0;
+
+        $hasPaidOrder = $booking->order && $booking->order->isPaid();
+
+        if ($hasPaidOrder) {
+            $consultationTime = Carbon::parse($booking->booking_date->format('Y-m-d') . ' ' . $booking->start_time);
+            $refundAmount = $this->bookingService->calculateRefundAmount($booking->order, $consultationTime);
+            $refundPercentage = $this->bookingService->getRefundPercentage($refundAmount, (float) $booking->order->calculated_price);
+        }
 
         // Create refund record (if refund > 0)
-        $refund = null;
-        if ($refundAmount > 0) {
+        if ($hasPaidOrder && $refundAmount > 0) {
             $refund = Refund::create([
                 'order_id' => $booking->order_id,
                 'amount' => $refundAmount,
@@ -281,8 +384,10 @@ class BookingController extends Controller
         // Update booking
         $booking->update(['status' => 'cancelled']);
 
-        // Update order
-        $booking->order->update(['status' => 'cancelled']);
+        // Update order (hanya ada di alur lama)
+        if ($booking->order) {
+            $booking->order->update(['status' => 'cancelled']);
+        }
 
         $booking->load(['order.category', 'order.duration', 'psikolog.psikologProfile']);
 

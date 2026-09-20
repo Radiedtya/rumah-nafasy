@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\Controller;
 use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
@@ -19,6 +18,15 @@ class ProfileController extends Controller
         );
     }
 
+    /**
+     * HANYA data profil (name/phone/avatar).
+     *
+     * Jalur password sengaja DIPINDAH ke endpoint khusus
+     * `PUT auth/password` (PasswordController) yang punya verifikasi
+     * berlapis: password lama, atau OTP email untuk akun Google murni.
+     * Memisahkan jalur = satu celah tertutup: perubahan kredensial tidak
+     * bisa diselundupkan lewat update profil biasa.
+     */
     public function update(UpdateProfileRequest $request)
     {
         $user = $request->user();
@@ -37,18 +45,10 @@ class ProfileController extends Controller
             $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
-        // Handle password change
-        if ($request->filled('password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
-                return $this->errorResponse('Password lama salah', 422);
-            }
-            $data['password'] = Hash::make($request->password);
-        }
-
         $user->update($data);
 
         return $this->successResponse(
-            new UserResource($user->load('roles', 'psikologProfile')),
+            new UserResource($user->fresh()->load('roles', 'psikologProfile')),
             'Profil berhasil diperbarui'
         );
     }
@@ -59,8 +59,8 @@ class ProfileController extends Controller
             'avatar' => ['required', 'image', 'max:2048'],
         ], [
             'avatar.required' => 'File gambar wajib disertakan',
-            'avatar.image'    => 'File harus berupa gambar',
-            'avatar.max'      => 'Ukuran gambar maksimal 2MB',
+            'avatar.image' => 'File harus berupa gambar',
+            'avatar.max' => 'Ukuran gambar maksimal 2MB',
         ]);
 
         $user = $request->user();
@@ -84,7 +84,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->avatar) {
+        if (! $user->avatar) {
             return $this->errorResponse('Tidak ada foto profil untuk dihapus', 422);
         }
 

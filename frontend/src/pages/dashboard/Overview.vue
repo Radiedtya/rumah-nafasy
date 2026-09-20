@@ -17,6 +17,7 @@ import PageHeader from '../../components/dashboard/PageHeader.vue'
 import StatCard from '../../components/dashboard/StatCard.vue'
 import StatusPill from '../../components/dashboard/StatusPill.vue'
 import BaseButton from '../../components/ui/BaseButton.vue'
+import BaseModal from '../../components/ui/BaseModal.vue'
 import BaseCard from '../../components/ui/BaseCard.vue'
 import BaseAvatar from '../../components/ui/BaseAvatar.vue'
 import BaseSkeleton from '../../components/ui/BaseSkeleton.vue'
@@ -31,7 +32,7 @@ const pasienStats = ref({
   completedBookings: 0,
 })
 const upcomingSessions = ref<any[]>([])
-const recentOrders = ref<any[]>([])
+const allBookings = ref<any[]>([])
 
 const psikologData = ref<{
   today_bookings: any[]
@@ -54,25 +55,22 @@ async function loadData() {
       psikologData.value = res.data
     } else {
       // Pasien data
-      const [bookingsRes, ordersRes] = await Promise.all([
-        apiFetch('pasien/bookings').catch(() => ({ data: [] })),
-        apiFetch('pasien/orders').catch(() => ({ data: [] })),
-      ])
+      const bookingsRes = await apiFetch('pasien/bookings').catch(() => ({ data: [] }))
 
       const bookings = bookingsRes.data?.data || bookingsRes.data || []
-      const orders = ordersRes.data?.data || ordersRes.data || []
+      allBookings.value = bookings
 
       pasienStats.value = {
         totalBookings: bookings.length,
-        upcomingBookings: bookings.filter((b: any) => b.status === 'confirmed').length,
+        upcomingBookings: bookings.filter((b: any) =>
+          ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status),
+        ).length,
         completedBookings: bookings.filter((b: any) => b.status === 'completed').length,
       }
 
       upcomingSessions.value = bookings
-        .filter((b: any) => b.status === 'confirmed' || b.status === 'in_progress')
+        .filter((b: any) => ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status))
         .slice(0, 3)
-
-      recentOrders.value = orders.slice(0, 4)
     }
   } catch (err) {
     console.error('Failed loading dashboard overview', err)
@@ -107,6 +105,54 @@ function formatDate(d: string) {
     day: 'numeric',
     month: 'short',
   })
+}
+
+// ── Persetujuan pengajuan booking (psikolog) ───────────────────────────────
+const decidingId = ref<number | null>(null)
+const rejectOpen = ref(false)
+const rejectTarget = ref<any>(null)
+const rejectReason = ref('')
+
+async function decideRequest(booking: any, decision: 'confirmed' | 'rejected') {
+  if (decision === 'rejected') {
+    rejectTarget.value = booking
+    rejectReason.value = ''
+    rejectOpen.value = true
+    return
+  }
+  decidingId.value = booking.id
+  try {
+    await apiFetch(`psikolog/bookings/${booking.id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'confirmed' }),
+    })
+    await loadData()
+  } catch (e: any) {
+    console.error('Gagal menyetujui pengajuan', e)
+  } finally {
+    decidingId.value = null
+  }
+}
+
+async function submitReject() {
+  if (!rejectTarget.value) return
+  decidingId.value = rejectTarget.value.id
+  try {
+    await apiFetch(`psikolog/bookings/${rejectTarget.value.id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        status: 'rejected',
+        rejected_reason: rejectReason.value || 'Jadwal tidak dapat disetujui',
+      }),
+    })
+    rejectOpen.value = false
+    rejectTarget.value = null
+    await loadData()
+  } catch (e: any) {
+    console.error('Gagal menolak pengajuan', e)
+  } finally {
+    decidingId.value = null
+  }
 }
 </script>
 
@@ -152,7 +198,7 @@ function formatDate(d: string) {
         <StatCard
           label="Sesi Mendatang"
           :value="pasienStats.upcomingBookings"
-          sub="Menunggu jadwal"
+          sub="Termasuk menunggu persetujuan"
           :icon="ClockIcon"
           tone="warning"
         />
@@ -237,17 +283,17 @@ function formatDate(d: string) {
           </div>
         </BaseCard>
 
-        <!-- Riwayat Order -->
+        <!-- Riwayat Booking -->
         <BaseCard class="flex flex-col">
           <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-[var(--text)]">Order Terbaru</h2>
+            <h2 class="text-sm font-semibold text-[var(--text)]">Booking Terbaru</h2>
           </div>
 
           <BaseEmpty
-            v-if="!loading && recentOrders.length === 0"
-            icon="💳"
-            title="Belum ada transaksi"
-            description="Order konsultasi akan tampil di sini."
+            v-if="!loading && allBookings.length === 0"
+            icon="🗓"
+            title="Belum ada booking"
+            description="Ajukan konsultasi pertama Anda — tanpa pembayaran di aplikasi."
           />
 
           <div v-else-if="loading" class="space-y-2.5">
@@ -256,25 +302,20 @@ function formatDate(d: string) {
 
           <div v-else class="space-y-2">
             <div
-              v-for="order in recentOrders"
-              :key="order.id"
+              v-for="b in allBookings.slice(0, 5)"
+              :key="b.id"
               class="flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] px-3.5 py-3 transition-colors hover:bg-[var(--muted)]/4"
             >
               <div class="min-w-0">
-                <p class="truncate font-mono text-[11px] font-medium text-[var(--text)]">
-                  {{ order.order_number }}
+                <p class="truncate text-xs font-medium text-[var(--text)]">
+                  {{ b.psikolog?.name || 'Psikolog' }}
                 </p>
                 <p class="mt-0.5 truncate text-[11px] text-[var(--muted)]">
-                  {{ order.psikolog?.name }} · {{ order.category?.name }} ({{ order.duration?.minutes }}m)
+                  {{ formatDate(b.booking_date) }} · {{ b.start_time }}–{{ b.end_time }} · {{ b.duration_minutes ?? 60 }}m
                 </p>
               </div>
-              <div class="shrink-0 text-right">
-                <p class="text-xs font-semibold tabular-nums text-[var(--text)]">
-                  {{ formatRupiah(order.calculated_price) }}
-                </p>
-                <div class="mt-1 flex justify-end">
-                  <StatusPill :status="order.status" />
-                </div>
+              <div class="shrink-0">
+                <StatusPill :status="b.status" />
               </div>
             </div>
           </div>
@@ -362,8 +403,31 @@ function formatDate(d: string) {
               </div>
             </div>
 
+            <!-- Persetujuan pengajuan (alur tanpa pembayaran) -->
+            <div
+              v-if="booking.status === 'pending_psikolog'"
+              class="flex shrink-0 items-center gap-2"
+            >
+              <BaseButton
+                size="sm"
+                :disabled="decidingId === booking.id"
+                @click="decideRequest(booking, 'confirmed')"
+              >
+                Setujui
+              </BaseButton>
+              <BaseButton
+                size="sm"
+                variant="ghost"
+                class="!text-rose-600 dark:!text-rose-400 hover:!bg-rose-500/10"
+                :disabled="decidingId === booking.id"
+                @click="decideRequest(booking, 'rejected')"
+              >
+                Tolak
+              </BaseButton>
+            </div>
+
             <a
-              v-if="booking.room_id"
+              v-else-if="booking.room_id"
               :href="`https://meet.jit.si/${booking.room_id}`"
               target="_blank"
               rel="noopener noreferrer"
@@ -376,5 +440,37 @@ function formatDate(d: string) {
         </div>
       </BaseCard>
     </div>
+
+    <!-- ================= MODAL TOLAK PENGAJUAN ================= -->
+    <BaseModal
+      v-model:open="rejectOpen"
+      title="Tolak Pengajuan Konsultasi"
+      max-width="max-w-md"
+    >
+      <div class="space-y-4">
+        <p class="text-xs leading-relaxed text-[var(--muted)]">
+          Pengajuan dari <strong class="text-[var(--text)]">{{ rejectTarget?.pasien?.name }}</strong>
+          akan ditolak dan pasien diberi tahu. Slot akan dilepas.
+        </p>
+        <div>
+          <label class="field-label">Alasan Penolakan</label>
+          <textarea
+            v-model="rejectReason"
+            rows="3"
+            maxlength="500"
+            placeholder="Contoh: jadwal bentrok, kuota penuh…"
+            class="field-input resize-none"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <BaseButton variant="secondary" size="md" class="flex-1" @click="rejectOpen = false">
+            Kembali
+          </BaseButton>
+          <BaseButton variant="danger" size="md" class="flex-1" :disabled="decidingId !== null" @click="submitReject">
+            {{ decidingId !== null ? 'Memproses…' : 'Tolak Pengajuan' }}
+          </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
   </div>
 </template>

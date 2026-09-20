@@ -4,32 +4,51 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Api\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Http\Resources\UserResource;
-use App\Models\User;
+use App\Models\PendingRegistration;
+use App\Services\EmailOtpService;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class RegisterController extends Controller
 {
-    public function register(RegisterRequest $request)
+    /**
+     * ── Registrasi metode email biasa ────────────────────────────────────
+     *
+     * PENTING — email TIDAK disimpan ke tabel `users` di tahap ini.
+     * Data pendaftar disimpan sebagai kandidat akun di `pending_registrations`
+     * dan OTP 6 digit dikirim via Resend. OTP yang benar = bukti kepemilikan
+     * email; baris pending baru dipromosikan menjadi user terverifikasi
+     * pada endpoint auth/email/verify.
+     *
+     * Keamanan:
+     * - Tidak ada baris users "zombie" tanpa verifikasi.
+     * - verify_handle acak (64 char) = pengenal halaman OTP; pemilik email
+     *   tidak bisa diverifikasi oleh pihak lain tanpa kode OTP.
+     * - verify_handle baru di setiap register → handle lama mati.
+     */
+    public function register(RegisterRequest $request, EmailOtpService $otpService)
     {
-        $user = User::create([
+        $email = strtolower($request->email);
+
+        // Timpa kandidat lama untuk email yang sama (jika ada) — hanya satu
+        // pendaftaran aktif per email. (Unique di tabel menjamin ini.)
+        PendingRegistration::where('email', $email)->delete();
+
+        $pending = PendingRegistration::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'email' => $email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'email_verified_at' => now(),
-            'phone_verified_at' => now(),
-            'is_active' => true,
+            'verify_handle' => Str::random(64),
+            'expires_at' => now()->addMinutes((int) config('emailotp.pending_ttl_minutes', 60)),
         ]);
 
-        $user->assignRole('pasien');
-
-        $token = $user->createToken('register-token')->plainTextToken;
+        $otpService->issue($pending);
 
         return $this->successResponse([
-            'user' => new UserResource($user->load('roles')),
-            'token' => $token,
-            'token_type' => 'Bearer',
-        ], 'Registrasi berhasil. Selamat datang di Rumah Natasy!', 201);
+            'email' => $pending->email,
+            'verify_handle' => $pending->verify_handle,
+            'requires_verification' => true,
+        ], 'Registrasi berhasil. Kode verifikasi telah dikirim ke email Anda.', 201);
     }
 }
