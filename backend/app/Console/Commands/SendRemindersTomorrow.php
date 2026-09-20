@@ -20,7 +20,7 @@ class SendRemindersTomorrow extends Command
     {
         $tomorrow = now()->addDay()->format('Y-m-d');
 
-        $bookings = Booking::where('booking_date', $tomorrow)
+        $bookings = Booking::whereDate('booking_date', $tomorrow)
             ->where('status', 'confirmed')
             ->with(['pasien', 'psikolog', 'order.category', 'order.duration'])
             ->get();

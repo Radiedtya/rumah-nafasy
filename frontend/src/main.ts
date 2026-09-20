@@ -60,5 +60,5 @@ export const createApp = ViteSSG(App, { routes }, ({ app }) => {
       extends: SimpleIcon,
       props: { icon: { default: () => siX } },
     })
-    .use(pinia)
+  .use(pinia)
 })

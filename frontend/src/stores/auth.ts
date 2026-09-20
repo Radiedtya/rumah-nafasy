@@ -9,6 +9,9 @@ export interface UserProfile {
   phone: string
   avatar?: string | null
   roles?: string[]
+  /** Metode login tersedia (untuk pengaturan keamanan akun). */
+  has_google?: boolean
+  has_password?: boolean
   psikolog_profile?: {
     id: number
     slug: string
@@ -82,6 +85,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Registrasi metode email — server TIDAK mengembalikan token dan TIDAK
+   * membuat akun dulu. Data disimpan sebagai pendaftaran pending; email
+   * baru masuk database (tabel users) SETELAH OTP terverifikasi.
+   * `verify_handle` = pengenal sesi OTP untuk halaman verifikasi.
+   */
   async function register(data: {
     name: string
     email: string
@@ -93,15 +102,45 @@ export const useAuthStore = defineStore('auth', () => {
   }) {
     isLoading.value = true
     try {
-      const res = await apiFetch<{ user: UserProfile; token: string }>('auth/register', {
+      const res = await apiFetch<{ email: string; verify_handle: string; requires_verification: boolean }>('auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       })
-      setSession(res.data.token, res.data.user)
+      // Sengaja TIDAK setSession — akun baru tercipta setelah OTP benar.
       return res.data
     } finally {
       isLoading.value = false
     }
+  }
+
+  /** Verifikasi OTP email → akun dibuat terverifikasi + token (masuk sesi). */
+  async function verifyEmail(email: string, code: string, verifyHandle?: string) {
+    const res = await apiFetch<{ user: UserProfile; token: string; verified: boolean }>('auth/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, ...(verifyHandle ? { verify_handle: verifyHandle } : {}) }),
+    })
+    setSession(res.data.token, res.data.user)
+    return res.data
+  }
+
+  /** Kirim ulang OTP. Mengembalikan sisa cooldown (detik) bila 429. */
+  async function resendEmailOtp(email: string, verifyHandle?: string) {
+    const res = await apiFetch<{ resent: boolean; retry_after: number | null }>('auth/email/resend', {
+      method: 'POST',
+      body: JSON.stringify({ email, ...(verifyHandle ? { verify_handle: verifyHandle } : {}) }),
+    })
+    return res.data
+  }
+
+  /** Status verifikasi (publik, untuk sinkron countdown). */
+  async function emailStatus(email: string, verifyHandle?: string) {
+    const params = new URLSearchParams({ email })
+    if (verifyHandle) params.set('verify_handle', verifyHandle)
+    const res = await apiFetch<{ registered: boolean; verified: boolean; retry_after: number | null }>(
+      `auth/email/status?${params.toString()}`,
+      { method: 'GET' },
+    )
+    return res.data
   }
 
   async function logout() {
@@ -185,6 +224,38 @@ export const useAuthStore = defineStore('auth', () => {
     return res.data
   }
 
+  /**
+   * Ubah / atur password (halaman Profil → Metode Masuk).
+   * - User punya password → wajib current_password.
+   * - Akun Google murni → wajib otp_token + otp_code dari sendSetPasswordOtp().
+   */
+  async function updatePassword(data: {
+    current_password?: string
+    otp_token?: string
+    otp_code?: string
+    password: string
+    password_confirmation: string
+  }) {
+    const res = await apiFetch<UserProfile>('auth/password', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    user.value = res.data
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(res.data))
+    }
+    return res.data
+  }
+
+  /** Kirim OTP email untuk proses set-password (akun Google murni). */
+  async function sendSetPasswordOtp() {
+    const res = await apiFetch<{ sent: boolean; email: string; otp_token: string; retry_after: number | null }>(
+      'auth/password/set-otp',
+      { method: 'POST' },
+    )
+    return res.data
+  }
+
   return {
     token,
     user,
@@ -195,11 +266,16 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     login,
     register,
+    verifyEmail,
+    resendEmailOtp,
+    emailStatus,
     logout,
     fetchMe,
     updateProfile,
     uploadAvatar,
     deleteAvatar,
+    updatePassword,
+    sendSetPasswordOtp,
     setSession,
     clearSession,
   }

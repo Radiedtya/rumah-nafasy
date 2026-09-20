@@ -35,4 +35,29 @@ return [
         ],
     ],
 
+    /*
+    | Cloudflare Turnstile (anti-bot register).
+    | Secret diverifikasi server-side di RegisterRequest — tanpa ini,
+    | token dari frontend hanya diasumsikan benar (celah tertutup).
+    */
+    'turnstile' => [
+        'secret' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
+    /*
+    | Login Google (Socialite). Dapatkan kredensial di
+    | https://console.cloud.google.com/apis/credentials → OAuth client ID
+    | → Application type: Web application.
+    |
+    | allowed_spa_origins: origin frontend yang dipercaya sebagai tujuan
+    | redirect kembali (anti open-redirect). Pisahkan dengan koma bila > 1.
+    */
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+        'allowed_spa_origins' => env('GOOGLE_ALLOWED_SPA_ORIGINS', 'http://localhost:5173'),
+        'default_spa_origin' => env('GOOGLE_DEFAULT_SPA_ORIGIN', 'http://localhost:5173'),
+    ],
+
 ];

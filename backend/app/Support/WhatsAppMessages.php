@@ -65,6 +65,59 @@ class WhatsAppMessages
     }
 
     // ============================================
+    // BOOKING LANGSUNG (alur tanpa pembayaran)
+    // ============================================
+
+    /** Pengajuan baru dari pasien — dikirim ke psikolog untuk disetujui. */
+    public static function bookingRequested(Booking $booking): string
+    {
+        $date = self::formatDate($booking->booking_date);
+        $type = $booking->consultation_type === 'offline' ? 'Offline (Tatap Muka)' : 'Video Call';
+
+        return self::header()
+            . "🔔 *Pengajuan Konsultasi Baru!*\n\n"
+            . "Pasien: {$booking->pasien->name}\n"
+            . "Tanggal: {$date}\n"
+            . "Jam: {$booking->start_time} - {$booking->end_time} WIB\n"
+            . "Tipe: {$type}\n"
+            . "Durasi: {$booking->duration_minutes} menit\n\n"
+            . "Silakan buka dashboard untuk menyetujui atau menolak pengajuan ini.";
+    }
+
+    /** Psikolog menyetujui pengajuan — dikirim ke pasien. */
+    public static function bookingApproved(Booking $booking): string
+    {
+        $date = self::formatDate($booking->booking_date);
+        $type = $booking->consultation_type === 'offline' ? 'Offline (Tatap Muka)' : 'Video Call';
+
+        $msg = self::header()
+            . "✅ *Pengajuan Konsultasi Disetujui!*\n\n"
+            . "Psikolog: {$booking->psikolog->name}\n"
+            . "Tanggal: {$date}\n"
+            . "Jam: {$booking->start_time} - {$booking->end_time} WIB\n"
+            . "Tipe: {$type}\n\n";
+
+        if ($booking->consultation_type === 'video' && $booking->room_id) {
+            $msg .= "Room ID: {$booking->room_id}\n\n";
+        }
+
+        return $msg . "💡 Pembayaran dilakukan langsung ke psikolog setelah sesi selesai.";
+    }
+
+    /** Psikolog menolak pengajuan — dikirim ke pasien. */
+    public static function bookingRejected(Booking $booking): string
+    {
+        $reason = $booking->rejected_reason ? "\nAlasan: {$booking->rejected_reason}\n" : "\n";
+
+        return self::header()
+            . "❌ *Pengajuan Konsultasi Ditolak*\n\n"
+            . "Psikolog: {$booking->psikolog->name}\n"
+            . "Tanggal: " . self::formatDate($booking->booking_date) . "\n"
+            . $reason
+            . "Silakan pilih jadwal atau psikolog lain melalui dashboard.";
+    }
+
+    // ============================================
     // BOOKING (JADWAL)
     // ============================================
 
@@ -115,7 +168,7 @@ class WhatsAppMessages
     // CANCEL & REFUND
     // ============================================
 
-    public static function bookingCancelled(Booking $booking, Refund $refund = null): string
+    public static function bookingCancelled(Booking $booking, ?Refund $refund = null): string
     {
         $msg = self::header()
             . "❌ *Booking Dibatalkan*\n\n"

@@ -17,63 +17,25 @@ class MidtransController extends Controller
     ) {}
 
     /**
-     * Handle Midtrans payment notification.
-     * Also handles mock payment success for development.
+     * Handle Midtrans payment notification (server-to-server).
+     *
+     * Keamanan:
+     * - Endpoint ini TIDAK punya jalur mock — simulasi pembayaran dilakukan
+     *   lewat POST /pasien/orders/{order}/mock-success (auth + pemilik order,
+     *   hanya aktif saat Midtrans belum dikonfigurasi).
+     * - Fail closed: jika Midtrans belum dikonfigurasi, notifikasi ditolak
+     *   (503) — jangan pernah memproses payload tanpa verifikasi.
+     * - Signature diverifikasi MidtransService.handleNotification();
+     *   payload tanpa signature valid ditolak.
      */
     public function handle(Request $request)
     {
-        // Mock mode: simulate payment success
-        if (!config('midtrans.is_configured') || $request->query('mock')) {
-            $orderNumber = $request->query('order_id') ?? $request->input('order_id');
-
-            if (!$orderNumber) {
-                return $this->errorResponse('Order ID required', 400);
-            }
-
-            $order = Order::where('order_number', $orderNumber)->first();
-
-            if (!$order) {
-                return $this->errorResponse('Order not found', 404);
-            }
-
-            // Update payment
-            $payment = Payment::where('order_id', $order->id)
-                ->where('status', 'pending')
-                ->first();
-
-            if ($payment) {
-                $payment->update([
-                    'status' => 'success',
-                    'payment_channel' => 'mock',
-                    'transaction_id' => 'mock-' . uniqid(),
-                    'paid_at' => now(),
-                    'payload' => array_merge($payment->payload ?? [], ['mock_notification' => true]),
-                ]);
-            }
-
-            // Update order status
-            $order->update([
-                'status' => 'paid',
-                'expires_at' => now()->addDays(7), // 7 hari untuk pilih jadwal
-            ]);
-
-            app(FonnteService::class)->notifyUser(
-                $order->pasien,
-                WhatsAppMessages::paymentSuccessPasien($order)
-            );
-            app(FonnteService::class)->notifyUser(
-                $order->psikolog,
-                WhatsAppMessages::paymentSuccessPsikolog($order)
-            );
-
-            return $this->successResponse([
-                'order_number' => $order->order_number,
-                'status' => 'paid',
-            ], 'Mock payment success');
+        if (!config('midtrans.is_configured')) {
+            return $this->errorResponse('Payment gateway tidak aktif', 503);
         }
 
-        // Real Midtrans notification
         try {
+            // Verifikasi signature_key Midtrans; lempar exception jika tidak valid
             $notification = $this->midtransService->handleNotification($request->all());
 
             $order = Order::where('order_number', $notification['order_id'])->first();
@@ -113,13 +75,14 @@ class MidtransController extends Controller
                     $order->psikolog,
                     WhatsAppMessages::paymentSuccessPsikolog($order)
                 );
-                
             } elseif ($mappedStatus === 'failed') {
                 $order->update(['status' => 'cancelled']);
             }
 
             return $this->successResponse(null, 'Notification processed');
-
+        } catch (\Midtrans\ApiException $e) {
+            // Signature tidak valid / payload menyerupai notifikasi palsu
+            return $this->errorResponse('Signature tidak valid', 403);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to process notification: ' . $e->getMessage(), 500);
         }

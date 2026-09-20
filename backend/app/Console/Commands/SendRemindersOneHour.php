@@ -21,7 +21,7 @@ class SendRemindersOneHour extends Command
         $from = now()->addMinutes(50)->format('H:i:s');
         $to = now()->addMinutes(70)->format('H:i:s');
 
-        $bookings = Booking::where('booking_date', now()->format('Y-m-d'))
+        $bookings = Booking::whereDate('booking_date', now()->format('Y-m-d'))
             ->where('status', 'confirmed')
             ->whereTime('start_time', '>=', $from)
             ->whereTime('start_time', '<=', $to)

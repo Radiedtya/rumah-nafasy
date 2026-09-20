@@ -18,7 +18,7 @@ const notFound = ref(false)
 const booted = ref(false)
 
 function currentStep(): 1 | 2 | 3 | 4 {
-  if (route.path.endsWith('/pembayaran')) return 2
+  if (route.path.endsWith('/keluhan')) return 2
   if (route.path.endsWith('/jadwal')) return 3
   if (route.path.endsWith('/selesai')) return 4
   return 1
@@ -26,18 +26,10 @@ function currentStep(): 1 | 2 | 3 | 4 {
 const step = computed(() => currentStep())
 
 async function loadCatalog() {
-  if (store.categories.length > 0 && store.durations.length > 0) {
-    store.applyCatalogDefaults()
-    return
-  }
+  if (store.categories.length > 0) return
   try {
-    const [catRes, durRes] = await Promise.all([
-      apiFetch('public/categories'),
-      apiFetch('public/durations'),
-    ])
-    store.categories = catRes.data || []
-    store.durations = durRes.data || []
-    store.applyCatalogDefaults()
+    const res = await apiFetch('public/categories')
+    store.categories = res.data || []
   } catch (e) {
     console.error('Failed loading booking catalog', e)
   }
@@ -66,21 +58,34 @@ watch(slug, () => {
   if (slug.value) loadDetail()
 })
 
-onMounted(async () => {
-  // Wizard butuh sesi login. Beri jeda untuk auto-login dev di DashboardLayout
-  // (child onMounted berjalan lebih dulu daripada parent).
-  if (!auth.isAuthenticated) {
-    const started = Date.now()
-    while (!auth.isAuthenticated && Date.now() - started < 2000) {
-      await new Promise((r) => setTimeout(r, 100))
+// ── Gate urutan langkah wizard ──────────────────────────────────────────────
+// Selesai hanya boleh diakses setelah pengajuan terkirim (ada hasil booking).
+watch(
+  [step, booted],
+  ([s, ready]) => {
+    if (!ready || notFound.value) return
+    if (s === 4 && !store.confirmedBooking) {
+      router.replace(`/dashboard/booking/${slug.value}/jadwal`)
     }
-    if (!auth.isAuthenticated) {
+  },
+  { immediate: false },
+)
+
+onMounted(async () => {
+  // Gate sesi: tanpa token → login (lapisan kedua di atas guard router).
+  if (!auth.token) {
+    router.replace({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  if (!auth.user) {
+    await auth.fetchMe()
+    if (!auth.user) {
       router.replace({ path: '/login', query: { redirect: route.fullPath } })
       return
     }
   }
-  await loadCatalog()
-  await loadDetail()
+
+  await Promise.all([loadCatalog(), loadDetail()])
   booted.value = true
 })
 </script>
@@ -112,7 +117,7 @@ onMounted(async () => {
           Konsultasi dengan {{ store.psikolog?.name }}
         </h1>
         <p class="mt-1 text-sm text-[var(--muted)]">
-          {{ store.psikolog?.specialization || 'Psikolog Klinis' }} · Pilih paket, bayar, lalu tentukan jadwal.
+          {{ store.psikolog?.specialization || 'Psikolog Klinis' }} · Pilih paket, tentukan jadwal, tanpa pembayaran di aplikasi.
         </p>
       </template>
 

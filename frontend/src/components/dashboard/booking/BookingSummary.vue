@@ -1,20 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useBookingStore, formatRupiah } from '../../../stores/booking'
+import { BanknotesIcon } from '@heroicons/vue/24/outline'
 import BaseAvatar from '../../ui/BaseAvatar.vue'
 
 const store = useBookingStore()
 
 const psikolog = computed(() => store.psikolog)
-const category = computed(() => store.selectedCategory)
-const duration = computed(() => store.selectedDuration)
-const order = computed(() => store.order)
-
-const rateLabel = computed(() => {
-  if (!category.value) return '—'
-  const rate = psikolog.value?.custom_rate || category.value.base_price
-  return `${formatRupiah(rate)} / 60m`
-})
+const typeLabel = computed(() => (store.consultationType === 'offline' ? 'Offline (Tatap Muka)' : 'Video Call'))
 </script>
 
 <template>
@@ -38,37 +31,52 @@ const rateLabel = computed(() => {
       </p>
     </div>
 
-    <!-- Rincian pesanan -->
+    <!-- Rincian -->
     <div class="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
-      <p class="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">Rincian Pesanan</p>
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">Rincian</p>
       <dl class="mt-3 space-y-2.5 text-xs">
         <div class="flex items-center justify-between gap-3">
-          <dt class="text-[var(--muted)]">Kategori</dt>
-          <dd class="font-medium text-[var(--text)]">{{ category?.name ?? '—' }}</dd>
+          <dt class="text-[var(--muted)]">Jenis</dt>
+          <dd class="font-medium text-[var(--text)]">{{ typeLabel }}</dd>
         </div>
         <div class="flex items-center justify-between gap-3">
-          <dt class="text-[var(--muted)]">Tarif</dt>
-          <dd class="tabular-nums text-[var(--text)]">{{ rateLabel }}</dd>
+          <dt class="text-[var(--muted)]">Kategori</dt>
+          <dd class="font-medium text-[var(--text)]">{{ store.requestedCategory?.name ?? '—' }}</dd>
         </div>
         <div class="flex items-center justify-between gap-3">
           <dt class="text-[var(--muted)]">Durasi</dt>
-          <dd class="font-medium text-[var(--text)]">{{ duration?.name ?? '—' }}</dd>
+          <dd class="font-medium text-[var(--text)]">{{ store.durationMinutes }} menit</dd>
         </div>
         <div class="flex items-center justify-between gap-3">
-          <dt class="text-[var(--muted)]">Media</dt>
-          <dd class="font-medium text-[var(--text)]">{{ store.consultationType === 'video' ? 'Video Call' : 'Chat Teks' }}</dd>
-        </div>
-        <div v-if="order" class="flex items-center justify-between gap-3">
-          <dt class="text-[var(--muted)]">No. Order</dt>
-          <dd class="font-mono text-[11px] text-[var(--text)]">{{ order.order_number }}</dd>
-        </div>
-        <div class="flex items-center justify-between gap-3 border-t border-[var(--line)] pt-2.5">
-          <dt class="font-semibold text-[var(--text)]">Total</dt>
-          <dd class="text-base font-semibold tabular-nums text-[var(--accent)]">
-            {{ formatRupiah(order?.calculated_price ?? store.calculatedPrice) }}
+          <dt class="text-[var(--muted)]">Jadwal</dt>
+          <dd class="font-medium text-[var(--text)]">
+            <template v-if="store.bookingDate && store.selectedSlot">
+              {{ store.bookingDate }} · {{ store.selectedSlot.start_time }}
+            </template>
+            <template v-else>—</template>
           </dd>
         </div>
+        <div class="flex items-center justify-between gap-3 border-t border-[var(--line)] pt-2.5">
+          <dt class="text-[var(--muted)]">Acuan Biaya</dt>
+          <dd class="tabular-nums text-[var(--text)]">
+            <template v-if="store.estimateRate">~ {{ formatRupiah(store.estimateRate) }} / 60m</template>
+            <template v-else>Sepakatan</template>
+          </dd>
+        </div>
+        <div v-if="store.complaint?.trim()" class="flex items-start justify-between gap-3">
+          <dt class="shrink-0 text-[var(--muted)]">Keluhan</dt>
+          <dd class="text-right font-medium text-[var(--text)]">✓ Ditulis untuk psikolog</dd>
+        </div>
       </dl>
+
+      <!-- Catatan pembayaran P2P -->
+      <div class="mt-3 flex items-start gap-2 rounded-lg bg-[var(--muted)]/6 p-2.5">
+        <BanknotesIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
+        <p class="text-[11px] leading-relaxed text-[var(--muted)]">
+          <strong class="text-[var(--text)]">Tanpa pembayaran di aplikasi</strong> — pembayaran dilakukan
+          langsung ke psikolog setelah sesi selesai. Nominal disepakati bersama.
+        </p>
+      </div>
     </div>
   </aside>
 </template>

@@ -35,7 +35,7 @@ class DailyAdminReport extends Command
         $totalRevenue = Order::where('status', 'completed')
             ->whereDate('updated_at', $today)->sum('calculated_price');
         $newUsers = User::whereDate('created_at', $today)->count();
-        $activeBookings = Booking::where('booking_date', $today)
+        $activeBookings = Booking::whereDate('booking_date', $today)
             ->whereIn('status', ['confirmed', 'in_progress'])->count();
         $pendingRefunds = Refund::where('status', 'pending')->count();
 
