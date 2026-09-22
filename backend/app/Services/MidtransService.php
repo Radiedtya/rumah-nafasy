@@ -30,7 +30,7 @@ class MidtransService
         // URL mengarah ke halaman pembayaran frontend (bukan webhook!);
         // simulasi hanya bisa dipicu pemilik order via endpoint mockSuccess.
         if (!config('midtrans.is_configured')) {
-            $appUrl = rtrim(config('app.frontend_url', config('app.url', 'http://localhost:5173')), '/');
+            $appUrl = rtrim(config('app.frontend_url', config('app.url', 'http://localhost:3000')), '/');
             return [
                 'token' => 'mock-' . Str::random(16),
                 'redirect_url' => $appUrl . '/dashboard/booking/payment/' . $order->order_number,
