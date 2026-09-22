@@ -17,8 +17,9 @@ export default defineConfig({
       return paths.filter((path: string) => !path.startsWith('/dashboard') && !path.startsWith('/login') && !path.startsWith('/register'))
     },
   },
-    server: {
-    port: 5173,
+  server: {
+    port: 3000,
+    strictPort: true,
 
     allowedHosts: [
       'api-tools.gg7.dev',

@@ -281,7 +281,7 @@ class GoogleAuthController extends Controller
     /**
      * Validasi URL landing SPA — HARUS origin yang terdaftar persis
      * (bandingkan scheme://host:port hasil parse, BUKAN prefix string,
-     * supaya `http://localhost:5173.evil.com` tidak lolos).
+     * supaya `http://localhost:3000.evil.com` tidak lolos).
      */
     private function safeSpaRedirect(?string $target): string
     {
