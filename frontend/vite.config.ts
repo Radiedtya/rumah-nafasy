@@ -7,6 +7,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: '/',
   plugins: [vue(), tailwindcss()],
+  build: {
+    outDir: '../.nafasy/dist',
+    emptyOutDir: true,
+  },
   ssgOptions: {
     // Exclude dashboard & auth routes from SSG — tetap SPA
     includedRoutes(paths: string[]) {
