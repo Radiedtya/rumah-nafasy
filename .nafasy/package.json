@@ -1,0 +1,10 @@
+{
+  "name": "nafasy",
+  "version": "1.0.0",
+  "description": "Rumah Nafasy Framework CLI Runner",
+  "type": "module",
+  "bin": {
+    "nafasy": "./cli.js"
+  },
+  "keywords": ["nafasy", "laravel", "vue", "runner"]
+}

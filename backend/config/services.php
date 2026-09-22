@@ -56,8 +56,8 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
-        'allowed_spa_origins' => env('GOOGLE_ALLOWED_SPA_ORIGINS', 'http://localhost:5173'),
-        'default_spa_origin' => env('GOOGLE_DEFAULT_SPA_ORIGIN', 'http://localhost:5173'),
+        'allowed_spa_origins' => env('GOOGLE_ALLOWED_SPA_ORIGINS', 'http://localhost:3000'),
+        'default_spa_origin' => env('GOOGLE_DEFAULT_SPA_ORIGIN', 'http://localhost:3000'),
     ],
 
 ];

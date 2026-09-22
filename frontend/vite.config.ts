@@ -7,14 +7,19 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: '/',
   plugins: [vue(), tailwindcss()],
+  build: {
+    outDir: '../.nafasy/dist',
+    emptyOutDir: true,
+  },
   ssgOptions: {
     // Exclude dashboard & auth routes from SSG — tetap SPA
     includedRoutes(paths: string[]) {
       return paths.filter((path: string) => !path.startsWith('/dashboard') && !path.startsWith('/login') && !path.startsWith('/register'))
     },
   },
-    server: {
-    port: 5173,
+  server: {
+    port: 3000,
+    strictPort: true,
 
     allowedHosts: [
       'api-tools.gg7.dev',
