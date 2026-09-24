@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schedule;
 
 /*
 |--------------------------------------------------------------------------
-| Rumah Natasy — Scheduler
+| Rumah Nafasy — Scheduler
 |--------------------------------------------------------------------------
 |
 | Command yang berjalan otomatis berdasarkan jadwal.

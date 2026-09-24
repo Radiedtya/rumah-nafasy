@@ -3,7 +3,7 @@
   Table-based + inline CSS (kompatibel Gmail, Outlook, Apple Mail).
   Logo di-embed sebagai CID attachment (Mailable) — selalu tampil.
 --}}
-@php($appName = config('app.name', 'Rumah Natasy'))
+@php($appName = config('app.name', 'Rumah Nafasy'))
 @php($digits = str_split($otp))
 @php($accent = '#0F766E')
 @php($ink = '#111827')

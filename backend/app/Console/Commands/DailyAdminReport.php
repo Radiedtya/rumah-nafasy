@@ -39,7 +39,7 @@ class DailyAdminReport extends Command
             ->whereIn('status', ['confirmed', 'in_progress'])->count();
         $pendingRefunds = Refund::where('status', 'pending')->count();
 
-        $message = "🏠 *Rumah Natasy - Daily Report*\n\n"
+        $message = "🏠 *Rumah Nafasy - Daily Report*\n\n"
             . "📅 " . now()->format('d M Y') . "\n\n"
             . "📊 *Statistik Hari Ini:*\n"
             . "• Pesanan baru: {$newOrders}\n"

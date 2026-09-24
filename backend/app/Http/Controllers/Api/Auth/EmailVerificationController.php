@@ -92,7 +92,7 @@ class EmailVerificationController extends Controller
                     'token' => $token,
                     'token_type' => 'Bearer',
                     'verified' => true,
-                ], 'Email berhasil diverifikasi. Selamat datang di Rumah Natasy!');
+                ], 'Email berhasil diverifikasi. Selamat datang di Rumah Nafasy!');
             }
 
             $user = $pending->promoteToUser();
@@ -107,7 +107,7 @@ class EmailVerificationController extends Controller
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'verified' => true,
-            ], 'Email berhasil diverifikasi. Selamat datang di Rumah Natasy!');
+            ], 'Email berhasil diverifikasi. Selamat datang di Rumah Nafasy!');
         }
 
         // ── Jalur 2: akun legacy (pra-pending) yang masih unverified ─────
@@ -139,7 +139,7 @@ class EmailVerificationController extends Controller
             'token' => $token,
             'token_type' => 'Bearer',
             'verified' => true,
-        ], 'Email berhasil diverifikasi. Selamat datang di Rumah Natasy!');
+        ], 'Email berhasil diverifikasi. Selamat datang di Rumah Nafasy!');
     }
 
     /**
