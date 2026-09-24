@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../../../lib/api'
 import PageHeader from '../../../components/dashboard/PageHeader.vue'
@@ -444,7 +444,7 @@ async function quickAction(id: number, action: 'verify' | 'activate' | 'suspend'
                   </div>
                   <div class="form-group">
                     <label>Email *</label>
-                    <input v-model="form.email" type="email" placeholder="nama@rumahnatasy.id" :class="{ 'is-error': formErrors.email }" />
+                    <input v-model="form.email" type="email" placeholder="nama@rumah-nafasy.id" :class="{ 'is-error': formErrors.email }" />
                     <span v-if="formErrors.email" class="form-error">{{ formErrors.email }}</span>
                   </div>
                   <div class="form-group">

@@ -1,11 +1,11 @@
-<template>
+﻿<template>
   <section id="faq" aria-labelledby="faq-heading" class="faq-section">
 
     <!-- ── EYEBROW ── -->
     <div class="faq-header">
       <h2 id="faq-heading" class="faq-title">Pertanyaan<br />yang sering ditanyakan.</h2>
       <p class="faq-eyebrow">
-        Temukan jawaban tepercaya seputar layanan kesehatan mental di Rumah Natasy.
+        Temukan jawaban tepercaya seputar layanan kesehatan mental di Rumah Nafasy.
       </p>
     </div>
 
@@ -65,11 +65,11 @@ function toggle(idx: number) {
 
 const faqs = [
   {
-    question: 'Apakah semua psikolog Rumah Natasy berlisensi resmi?',
+    question: 'Apakah semua psikolog Rumah Nafasy berlisensi resmi?',
     answer: 'Ya, seluruh psikolog kami memegang Surat Izin Praktik (SIP) resmi dari Kementerian Kesehatan RI dan terdaftar aktif sebagai anggota HIMPsi. Semua melewati proses verifikasi latar belakang yang ketat sebelum bergabung.',
   },
   {
-    question: 'Berapa biaya konsultasi di Rumah Natasy?',
+    question: 'Berapa biaya konsultasi di Rumah Nafasy?',
     answer: 'Harga mulai dari Rp 100.000 per sesi, disesuaikan dengan kategori layanan dan psikolog yang Anda pilih. Tidak ada biaya tersembunyi — semua tarif ditampilkan transparan sebelum Anda melakukan booking.',
   },
   {
@@ -78,7 +78,7 @@ const faqs = [
   },
   {
     question: 'Bisa konsultasi lewat apa saja?',
-    answer: 'Anda bisa memilih antara sesi video call atau chat teks, sesuai kenyamanan Anda. Semua dilakukan langsung di platform Rumah Natasy tanpa perlu mengunduh aplikasi tambahan.',
+    answer: 'Anda bisa memilih antara sesi video call atau chat teks, sesuai kenyamanan Anda. Semua dilakukan langsung di platform Rumah Nafasy tanpa perlu mengunduh aplikasi tambahan.',
   },
   {
     question: 'Bagaimana jika saya perlu reschedule?',

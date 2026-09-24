@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -41,7 +41,7 @@ function handleGoogleRegister() {
     onError: (kind) => {
       googleLoading.value = false
       if (kind === 'blocked') {
-        errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
+        errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Nafasy.' }
       } else {
         errors.value = { form: 'Login Google gagal — coba lagi.' }
       }
@@ -87,7 +87,7 @@ declare global {
       reset: (widgetId: string) => void
       remove: (widgetId: string) => void
     }
-    _turnstileCbRumahNatasy?: () => void
+    _turnstileCbrumah-nafasy?: () => void
   }
 }
 
@@ -130,7 +130,7 @@ onMounted(() => {
   }
 
   // Nama callback unik agar tidak konflik dengan halaman lain
-  const cbName = '_turnstileCbRumahNatasy'
+  const cbName = '_turnstileCbrumah-nafasy'
   window[cbName] = () => {
     mountTurnstile()
     delete window[cbName]
@@ -286,9 +286,9 @@ async function handleRegister() {
 
     <div class="reg-inner">
       <div class="reg-header">
-        <RouterLink to="/" class="reg-brand" aria-label="Kembali ke beranda Rumah Natasy">
+        <RouterLink to="/" class="reg-brand" aria-label="Kembali ke beranda Rumah Nafasy">
           <img src="/icon.svg" alt="" aria-hidden="true" />
-          Rumah Natasy
+          Rumah Nafasy
         </RouterLink>
         <h2 class="reg-heading">Buat akun baru</h2>
         <p class="reg-subheading">Bergabung dan mulai perjalanan kesehatan mental Anda.</p>
@@ -427,7 +427,7 @@ async function handleRegister() {
           Dengan mendaftar, saya menyetujui
           <a href="#">Ketentuan Layanan</a>,
           <a href="#">Kebijakan Privasi</a>, dan
-          <a href="#">Kebijakan Cookie</a> Rumah Natasy.
+          <a href="#">Kebijakan Cookie</a> Rumah Nafasy.
         </p>
 
         <!-- Submit -->

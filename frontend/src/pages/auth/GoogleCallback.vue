@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiFetch } from '../../lib/api'
@@ -72,7 +72,7 @@ onMounted(async () => {
     status.value = 'error'
     errorMessage.value =
       googleError === 'blocked'
-        ? 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.'
+        ? 'Akun Anda dinonaktifkan — hubungi admin Rumah Nafasy.'
         : googleError === 'error'
           ? 'Login Google gagal — akun Google tidak memberikan email atau terjadi kesalahan.'
           : 'Kode login tidak ditemukan. Silakan coba lagi dari halaman masuk.'

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted } from 'vue'
 import Footer from '../components/app/Footer.vue'
 import Navbar from '../components/app/Navbar.vue'
@@ -30,10 +30,10 @@ const socialLinks = [
   >
     <Navbar
       :brand="{
-        name: 'Rumah Natasy',
+        name: 'Rumah Nafasy',
         href: '/',
         mark: '',
-        ariaLabel: 'Beranda Rumah Natasy',
+        ariaLabel: 'Beranda Rumah Nafasy',
       }"
       :links="navigationLinks"
     />
@@ -42,6 +42,6 @@ const socialLinks = [
       <RouterView />
     </main>
 
-    <Footer :copyright="`© ${new Date().getFullYear()} Rumah Natasy. Seluruh hak dilindungi.`" :social-links="socialLinks" />
+    <Footer :copyright="`© ${new Date().getFullYear()} Rumah Nafasy. Seluruh hak dilindungi.`" :social-links="socialLinks" />
   </div>
 </template>

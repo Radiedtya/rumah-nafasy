@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <footer id="kontak" class="site-footer">
     <div class="footer-wrap">
 
@@ -7,9 +7,9 @@
 
         <!-- Brand -->
         <div class="footer-brand-col">
-          <a href="/" class="footer-brand" aria-label="Beranda Rumah Natasy">
+          <a href="/" class="footer-brand" aria-label="Beranda Rumah Nafasy">
             <img src="/icon.svg" alt="" aria-hidden="true" class="footer-brand-icon" />
-            <span class="footer-brand-name">Rumah Natasy</span>
+            <span class="footer-brand-name">Rumah Nafasy</span>
           </a>
         </div>
 
@@ -92,7 +92,7 @@
         </div>
 
         <div class="footer-bottom-right">
-          <nav class="footer-social" aria-label="Media sosial Rumah Natasy">
+          <nav class="footer-social" aria-label="Media sosial Rumah Nafasy">
             <a v-for="s in socials" :key="s.label" :href="s.href" target="_blank" rel="noreferrer" :aria-label="s.label" class="footer-social-link">
               <component :is="s.icon" aria-hidden="true" />
             </a>

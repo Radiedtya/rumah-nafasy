@@ -1,5 +1,5 @@
-/**
- * Lightweight API client for Rumah Natasy Laravel Backend
+﻿/**
+ * Lightweight API client for Rumah Nafasy Laravel Backend
  * Zero heavy dependencies — native fetch with typed responses
  */
 

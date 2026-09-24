@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -79,8 +79,16 @@ async function loadData() {
   }
 }
 
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   loadData()
+  // Polling realtime setiap 30 detik
+  pollingTimer = setInterval(() => loadData(), 30_000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
 })
 
 watch(
@@ -159,7 +167,7 @@ async function submitReject() {
 <template>
   <div>
     <PageHeader
-      :title="`Halo, ${auth.user?.name?.split(' ')[0] || 'Kawan'}`"
+      :title="`Halo, ${auth.user?.name || 'Kawan'}`"
       :description="
         auth.isPsikolog
           ? 'Ringkasan praktik Anda hari ini — jadwal, pasien, dan pendapatan.'

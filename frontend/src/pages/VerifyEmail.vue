@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -212,9 +212,9 @@ onUnmounted(() => {
 
     <div class="ve-inner">
       <div class="ve-header">
-        <RouterLink to="/" class="ve-brand" aria-label="Kembali ke beranda Rumah Natasy">
+        <RouterLink to="/" class="ve-brand" aria-label="Kembali ke beranda Rumah Nafasy">
           <img src="/icon.svg" alt="" aria-hidden="true" />
-          Rumah Natasy
+          Rumah Nafasy
         </RouterLink>
         <h1 class="ve-heading">Verifikasi Email Anda</h1>
         <p class="ve-sub">

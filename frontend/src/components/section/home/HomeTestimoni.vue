@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section
     id="ulasan"
     aria-labelledby="testimoni-heading"
@@ -93,7 +93,7 @@ const testimoni = [
     name: 'Dito S.',
     ago: '1 minggu lalu',
     stars: 5,
-    quote: 'Setelah burnout parah, saya coba Rumah Natasy. Dalam 4 sesi saja saya sudah merasakan perbedaan besar. Harganya juga sangat terjangkau.',
+    quote: 'Setelah burnout parah, saya coba Rumah Nafasy. Dalam 4 sesi saja saya sudah merasakan perbedaan besar. Harganya juga sangat terjangkau.',
     avatarColor: 'linear-gradient(135deg, #93c5fd, #6ee7b7)',
   },
   {
@@ -114,7 +114,7 @@ const testimoni = [
     name: 'Rina L.',
     ago: '3 minggu lalu',
     stars: 5,
-    quote: 'Sudah coba beberapa platform, Rumah Natasy yang terbaik. Psikolognya berlisensi dan pendekatan terapinya terasa sangat terstruktur.',
+    quote: 'Sudah coba beberapa platform, Rumah Nafasy yang terbaik. Psikolognya berlisensi dan pendekatan terapinya terasa sangat terstruktur.',
     avatarColor: 'linear-gradient(135deg, #fbbf24, #fb923c)',
   },
   {
