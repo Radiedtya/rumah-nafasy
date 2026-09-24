@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -71,8 +71,16 @@ async function loadBooking() {
   }
 }
 
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   loadBooking()
+  // Polling realtime setiap 30 detik
+  pollingTimer = setInterval(() => loadBooking(), 30_000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
 })
 
 // ── Timeline progres ────────────────────────────────────────────────────────
