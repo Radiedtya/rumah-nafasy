@@ -61,8 +61,8 @@ class PsikologController extends Controller
                 'is_active'          => true,
             ]);
 
-            // 2. Assign role psikolog
-            $user->assignRole('psikolog');
+            // 2. Assign role psikolog (self-healing bila tabel roles kosong)
+            $user->assignRoleSafe('psikolog');
 
             // 3. Buat profil psikolog (langsung verified karena dibuat oleh admin)
             PsikologProfile::create([

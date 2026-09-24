@@ -273,7 +273,7 @@ class GoogleAuthController extends Controller
             'is_active' => true,
         ]);
 
-        $user->assignRole('pasien');
+        $user->assignRoleSafe('pasien');
 
         return $user;
     }

@@ -95,4 +95,23 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasRole('admin');
     }
+
+    /**
+     * Assign role dengan jaminan role ADA (self-healing).
+     *
+     * Spatie melempar RoleDoesNotExist bila tabel roles kosong — misal
+     * seeder RolePermissionSeeder belum dijalankan di environment baru.
+     * Tanpa ini, login Google / verifikasi OTP / pembuatan psikolog oleh
+     * admin meledak 500 SETELAH user dibuat → user "yatim" tanpa role.
+     * firstOrCreate membuat role yang hilang secara idempotent, lalu assign.
+     */
+    public function assignRoleSafe(string $role): static
+    {
+        \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => $role,
+            'guard_name' => 'web',
+        ]);
+
+        return $this->assignRole($role);
+    }
 }
