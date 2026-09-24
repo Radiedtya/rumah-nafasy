@@ -87,7 +87,7 @@ declare global {
       reset: (widgetId: string) => void
       remove: (widgetId: string) => void
     }
-    _turnstileCbrumah-nafasy?: () => void
+    _turnstileCbrumahNafasy?: () => void
   }
 }
 
@@ -130,7 +130,7 @@ onMounted(() => {
   }
 
   // Nama callback unik agar tidak konflik dengan halaman lain
-  const cbName = '_turnstileCbrumah-nafasy'
+  const cbName = '_turnstileCbrumahNafasy'
   window[cbName] = () => {
     mountTurnstile()
     delete window[cbName]

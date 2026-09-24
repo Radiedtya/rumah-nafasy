@@ -20,15 +20,15 @@ const loading = ref(true)
 const bookings = ref<any[]>([])
 const activeTab = ref('today')
 
-async function fetchBookings() {
-  loading.value = true
+async function fetchBookings(silent = false) {
+  if (!silent) loading.value = true
   try {
     const res = await apiFetch('pasien/bookings')
     bookings.value = res.data?.data || res.data || []
   } catch (e) {
     console.error('Failed fetching bookings', e)
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -36,23 +36,27 @@ let pollingTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   fetchBookings()
-  // Polling realtime setiap 30 detik
-  pollingTimer = setInterval(() => fetchBookings(), 30_000)
+  // Polling realtime setiap 30 detik (silent — tanpa flash skeleton)
+  pollingTimer = setInterval(() => fetchBookings(true), 30_000)
 })
 
 onUnmounted(() => {
   if (pollingTimer) clearInterval(pollingTimer)
 })
 
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
 function isToday(dateStr: string): boolean {
   if (!dateStr) return false
-  const today = new Date()
-  const d = new Date(dateStr)
-  return (
-    d.getFullYear() === today.getFullYear() &&
-    d.getMonth() === today.getMonth() &&
-    d.getDate() === today.getDate()
-  )
+  return startOfDay(new Date(dateStr)).getTime() === startOfDay(new Date()).getTime()
+}
+
+/** Sesi mendatang: hari ini sudah tidak dihitung (masuk tab "Sesi Hari Ini"), hanya tanggal setelah hari ini. */
+function isUpcoming(dateStr: string): boolean {
+  if (!dateStr) return false
+  return startOfDay(new Date(dateStr)).getTime() > startOfDay(new Date()).getTime()
 }
 
 const tabCounts = computed(() => ({
@@ -60,7 +64,7 @@ const tabCounts = computed(() => ({
     (b) => isToday(b.booking_date) && ['confirmed', 'in_progress', 'pending_psikolog'].includes(b.status),
   ).length,
   upcoming: bookings.value.filter(
-    (b) => !isToday(b.booking_date) && ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status),
+    (b) => isUpcoming(b.booking_date) && ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status),
   ).length,
   completed: bookings.value.filter((b) => b.status === 'completed').length,
   cancelled: bookings.value.filter((b) => b.status === 'cancelled' || b.status === 'rejected').length,
@@ -83,7 +87,7 @@ const filteredBookings = computed(() => {
   }
   if (activeTab.value === 'upcoming') {
     return bookings.value.filter(
-      (b) => !isToday(b.booking_date) && ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status),
+      (b) => isUpcoming(b.booking_date) && ['pending_psikolog', 'confirmed', 'in_progress'].includes(b.status),
     )
   }
   if (activeTab.value === 'completed') {
