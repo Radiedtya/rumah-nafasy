@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import type { UserProfile } from '../stores/auth'
 import { apiFetch } from '../lib/api'
 import { ArrowRightIcon } from '@heroicons/vue/20/solid'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import { useTheme } from '../composables/theme'
 import { useGooglePopup } from '../composables/googleAuth'
 
@@ -15,6 +16,7 @@ const { resolvedMode, setMode } = useTheme()
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const errors = ref<{ email?: string; password?: string; form?: string }>({})
 const isLoading = ref(false)
 
@@ -31,7 +33,7 @@ function handleGoogleLogin() {
     onError: (kind) => {
       isLoading.value = false
       if (kind === 'blocked') {
-        errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
+        errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Nafasy.' }
       } else {
         errors.value = { form: 'Login Google gagal — coba lagi.' }
       }
@@ -133,7 +135,7 @@ async function handleLogin() {
 // Balikan gagal dari callback Google (fallback redirect penuh → /login?google=…)
 onMounted(() => {
   if (route.query.google === 'blocked') {
-    errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Natasy.' }
+    errors.value = { form: 'Akun Anda dinonaktifkan — hubungi admin Rumah Nafasy.' }
   } else if (route.query.google === 'error') {
     errors.value = { form: 'Login Google gagal — akun Google tidak memberikan email atau terjadi kesalahan.' }
   }
@@ -145,9 +147,9 @@ onMounted(() => {
     <section class="login-panel">
       <div class="login-form-wrap">
         <!-- Brand — klik kembali ke / -->
-        <RouterLink to="/" class="login-brand" aria-label="Kembali ke beranda Rumah Natasy">
-          <img src="/icon.svg" alt="" aria-hidden="true" />
-          <span>Rumah Natasy</span>
+        <RouterLink to="/" class="login-brand" aria-label="Kembali ke beranda Rumah Nafasy">
+          <img src="/favicon.svg" alt="" aria-hidden="true" />
+          <span>Rumah Nafasy</span>
         </RouterLink>
 
         <div class="login-heading">
@@ -194,15 +196,26 @@ onMounted(() => {
 
           <div class="field-group">
             <label for="login-password">Password</label>
-            <input
-              id="login-password"
-              v-model="password"
-              type="password"
-              autocomplete="current-password"
-              placeholder="Masukkan password Anda"
-              :class="{ 'input-error': errors.password }"
-              @blur="errors.password = validatePassword(password) ?? undefined"
-            />
+            <div class="password-wrapper">
+              <input
+                id="login-password"
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                placeholder="Masukkan password Anda"
+                :class="{ 'input-error': errors.password }"
+                @blur="errors.password = validatePassword(password) ?? undefined"
+              />
+              <button
+                type="button"
+                class="pw-toggle"
+                :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                @click="showPassword = !showPassword"
+              >
+                <EyeSlashIcon v-if="showPassword" class="pw-icon" />
+                <EyeIcon v-else class="pw-icon" />
+              </button>
+            </div>
             <span v-if="errors.password" class="field-error" role="alert">{{ errors.password }}</span>
           </div>
 
@@ -238,8 +251,8 @@ onMounted(() => {
       </div>
     </section>
 
-    <section class="login-visual" aria-label="Visual platform Rumah Natasy">
-      <img src="/images/assets/login.png" alt="Placeholder visual platform Rumah Natasy" />
+    <section class="login-visual" aria-label="Visual platform Rumah Nafasy">
+      <img src="/images/assets/login.png" alt="Visual platform Rumah Nafasy" />
     </section>
   </div>
 </template>
