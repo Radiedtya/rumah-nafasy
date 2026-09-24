@@ -416,6 +416,31 @@ onMounted(() => {
 .field-group input.input-error:focus { box-shadow: 0 0 0 3px rgb(192 57 57 / 12%); }
 .field-error { font-size: 11.5px; color: var(--error-text); margin-top: -2px; }
 
+/* ── Password show/hide wrapper ─────────────────────────────────── */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.password-wrapper input { padding-right: 40px; }
+.pw-toggle {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 160ms, background 160ms;
+}
+.pw-toggle:hover { color: var(--text); background: color-mix(in srgb, var(--border) 40%, transparent); }
+.pw-icon { width: 16px; height: 16px; }
+
 /* ── Submit button ──────────────────────────────────────────────────── */
 .continue-button {
   width: 100%;
