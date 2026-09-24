@@ -1,4 +1,4 @@
-﻿import { ref, type App } from 'vue'
+﻿import { ref } from 'vue'
 import type { AlertType } from '../components/ui/BaseAlert.vue'
 
 interface ShowOptions {
