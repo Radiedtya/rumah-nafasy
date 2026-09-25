@@ -22,7 +22,7 @@ export default defineConfig({
     strictPort: true,
 
     allowedHosts: [
-      'api-tools.gg7.dev',
+      'coy-excludable-foolishly.ngrok-free.dev',
     ],  
 
     proxy: {
