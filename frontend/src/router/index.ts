@@ -23,16 +23,16 @@ function readSession(): { token: string; roles: string[] } | null {
   }
 }
 
-/** Halaman privat — wajib login, else → /login?redirect=... */
-function requireAuth(to: { fullPath: string }) {
-  return readSession() ? true : { path: '/login', query: { redirect: to.fullPath } }
+/** Halaman privat — wajib login, else → /login. */
+function requireAuth() {
+  return readSession() ? true : { path: '/login' }
 }
 
 /** Halaman berbasis role — role salah → kembali ke dashboard miliknya. */
 function requireRole(role: string) {
-  return (to: { fullPath: string }) => {
+  return () => {
     const session = readSession()
-    if (!session) return { path: '/login', query: { redirect: to.fullPath } }
+    if (!session) return { path: '/login' }
     if (!session.roles.includes(role)) return { path: '/dashboard' }
     return true
   }

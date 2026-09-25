@@ -86,10 +86,7 @@ onMounted(async () => {
     })
     auth.setSession(res.data.token, res.data.user)
 
-    // Redirect ke tujuan semula (dibawa di query) — default dashboard
-    const raw = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
-    const redirect = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') ? raw : '/dashboard'
-    router.replace(redirect)
+    router.replace('/dashboard')
   } catch (err: any) {
     status.value = 'error'
     errorMessage.value = err.message || 'Gagal menyelesaikan login Google.'

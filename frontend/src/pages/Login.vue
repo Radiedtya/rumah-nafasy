@@ -58,10 +58,7 @@ async function completeGoogleLogin(code: string) {
     })
     auth.setSession(res.data.token, res.data.user)
 
-    // Kembali ke halaman tujuan semula (query redirect) — anti open-redirect
-    const raw = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
-    const redirect = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') ? raw : '/dashboard'
-    router.push(redirect)
+    router.push('/dashboard')
   } catch (err: any) {
     errors.value = { form: err.message || 'Gagal menyelesaikan login Google.' }
   } finally {
@@ -106,11 +103,7 @@ async function handleLogin() {
   errors.value = {}
   try {
     await auth.login(email.value.trim(), password.value)
-    // Kembali ke halaman yang dituju sebelum diarahkan ke login (mis. wizard booking).
-    // Hanya izinkan path internal — blokir open redirect ke domain luar.
-    const raw = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
-    const redirect = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\') ? raw : '/dashboard'
-    router.push(redirect)
+    router.push('/dashboard')
   } catch (err: any) {
     // ── Gerbang verifikasi email: akun belum verifikasi OTP ─────────────
     if (err.status === 403 && err.errors?.code?.[0] === 'email_unverified') {
