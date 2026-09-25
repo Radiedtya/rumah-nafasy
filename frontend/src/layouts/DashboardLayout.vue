@@ -88,7 +88,7 @@ const currentSection = computed(() =>
           :style="{ borderColor: 'var(--sidebar-border)' }"
         >
           <img
-            src="/favicon.svg"
+            src="/icons/64.png"
             alt="Logo Rumah Nafasy"
             class="h-8 w-8 shrink-0 rounded-lg object-contain"
           />
@@ -127,7 +127,7 @@ const currentSection = computed(() =>
             :style="{ borderColor: 'var(--sidebar-border)' }"
           >
             <img
-              src="/favicon.svg"
+              src="/icons/64.png"
               alt="Logo Rumah Nafasy"
               class="h-8 w-8 shrink-0 rounded-lg object-contain"
             />

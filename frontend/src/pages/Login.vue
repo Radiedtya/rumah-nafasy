@@ -141,7 +141,7 @@ onMounted(() => {
       <div class="login-form-wrap">
         <!-- Brand — klik kembali ke / -->
         <RouterLink to="/" class="login-brand" aria-label="Kembali ke beranda Rumah Nafasy">
-          <img src="/favicon.svg" alt="" aria-hidden="true" />
+          <img src="/icons/64.png" alt="" aria-hidden="true" />
           <span>Rumah Nafasy</span>
         </RouterLink>
 

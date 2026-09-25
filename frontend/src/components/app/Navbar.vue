@@ -67,7 +67,7 @@ const closeMobile = () => { mobileOpen.value = false }
           :aria-label="brand.ariaLabel"
           class="inline-flex shrink-0 items-center gap-2 pr-7 text-[var(--ink)] no-underline"
         >
-          <img src="/icon.svg" alt="" aria-hidden="true" class="h-6 w-6 object-contain" />
+          <img src="/icons/64.png" alt="" aria-hidden="true" class="h-6 w-6 object-contain" />
           <span class="text-[19px] font-bold leading-none tracking-[-0.055em]">{{ brand.name }}</span>
         </a>
 
@@ -133,7 +133,7 @@ const closeMobile = () => { mobileOpen.value = false }
       <!-- Topbar -->
       <div class="flex items-center justify-between h-[60px] border-b border-[var(--line)] shrink-0">
         <a :href="brand.href" class="inline-flex items-center no-underline" @click="closeMobile">
-          <img src="/icon.svg" alt="" aria-hidden="true" class="w-8 h-8 object-contain" />
+          <img src="/icons/64.png" alt="" aria-hidden="true" class="w-8 h-8 object-contain" />
         </a>
         <button
           type="button"
