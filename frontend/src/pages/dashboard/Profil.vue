@@ -27,7 +27,7 @@ interface Country {
 const COUNTRIES: Country[] = [
   {
     code: 'ID',
-    flag: '🇮🇩',
+    flag: '/images/flags/id.svg',
     name: 'Indonesia',
     dialCode: '+62',
     // Indonesia: old format 8-11 digits after 0/62, new (modern) 9-13 digits
@@ -39,7 +39,7 @@ const COUNTRIES: Country[] = [
   },
   {
     code: 'CN',
-    flag: '🇨🇳',
+    flag: '/images/flags/cn.svg',
     name: 'Tiongkok',
     dialCode: '+86',
     formats: [
@@ -48,7 +48,7 @@ const COUNTRIES: Country[] = [
   },
   {
     code: 'MY',
-    flag: '🇲🇾',
+    flag: '/images/flags/my.svg',
     name: 'Malaysia',
     dialCode: '+60',
     formats: [
@@ -370,7 +370,7 @@ async function handleSubmit() {
               <div class="phone-field" :class="{ 'phone-field--error': phoneError }">
                 <div class="relative">
                   <button type="button" class="country-btn" :aria-label="`Kode negara: ${currentCountry.name} ${currentCountry.dialCode}`" @click="countryOpen = !countryOpen">
-                    <span class="text-lg leading-none">{{ currentCountry.flag }}</span>
+                    <img :src="currentCountry.flag" :alt="`Bendera ${currentCountry.name}`" class="h-5 w-7 rounded-sm object-cover" />
                     <span class="text-xs font-medium text-[var(--text)]">{{ currentCountry.dialCode }}</span>
                     <svg class="h-3.5 w-3.5 text-[var(--muted)] transition-transform" :class="{ 'rotate-180': countryOpen }" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25 4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
@@ -379,7 +379,7 @@ async function handleSubmit() {
                   <transition name="dropdown">
                     <div v-if="countryOpen" class="country-dropdown">
                       <button v-for="c in COUNTRIES" :key="c.code" type="button" class="country-option" :class="{ 'country-option--active': selectedCountry === c.code }" @click="selectCountry(c.code)">
-                        <span class="text-lg leading-none">{{ c.flag }}</span>
+                        <img :src="c.flag" :alt="`Bendera ${c.name}`" class="h-5 w-7 rounded-sm object-cover" />
                         <span class="flex-1 text-left text-xs">{{ c.name }}</span>
                         <span class="text-xs text-[var(--muted)]">{{ c.dialCode }}</span>
                       </button>

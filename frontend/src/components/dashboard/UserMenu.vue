@@ -65,9 +65,10 @@ async function handleLogout() {
       :class="compact ? 'justify-center' : ''"
     >
       <span
-        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/12 text-xs font-semibold text-[var(--accent)] ring-1 ring-[var(--accent)]/15"
+        class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent)]/12 text-xs font-semibold text-[var(--accent)] ring-1 ring-[var(--accent)]/15"
       >
-        {{ initials }}
+        <img v-if="auth.user?.avatar" :src="auth.user.avatar" :alt="auth.user.name || 'Foto profil'" class="h-full w-full object-cover" />
+        <span v-else>{{ initials }}</span>
       </span>
       <template v-if="!compact">
         <span class="min-w-0 flex-1">
