@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../../lib/api'
 import {
   ClockIcon,
   PlusIcon,
   TrashIcon,
-  CheckCircleIcon,
   DocumentTextIcon,
 } from '@heroicons/vue/24/outline'
 import PageHeader from '../../components/dashboard/PageHeader.vue'
@@ -15,6 +14,10 @@ import BaseSkeleton from '../../components/ui/BaseSkeleton.vue'
 import BaseEmpty from '../../components/ui/BaseEmpty.vue'
 import BaseModal from '../../components/ui/BaseModal.vue'
 import BaseSwitch from '../../components/ui/BaseSwitch.vue'
+import BaseConfirm from '../../components/ui/BaseConfirm.vue'
+import { useAlert } from '../../composables/useAlert'
+
+const { success, error: alertError } = useAlert()
 
 const schedules = ref<any[]>([])
 const loading = ref(true)
@@ -51,10 +54,12 @@ async function approveRequest(booking: any) {
       method: 'PUT',
       body: JSON.stringify({ status: 'confirmed' }),
     })
-    message.value = 'Pengajuan disetujui — pasien telah dinotifikasi.'
+    message.value = ''
+    success('Pengajuan disetujui — pasien telah dinotifikasi.', 'Berhasil')
     await Promise.all([fetchPendingRequests(), fetchSchedules()])
   } catch (e: any) {
     error.value = e.message || 'Gagal menyetujui pengajuan'
+    alertError(error.value, 'Gagal')
   } finally {
     decidingId.value = null
   }
@@ -80,10 +85,12 @@ async function submitReject() {
     })
     rejectOpen.value = false
     rejectTarget.value = null
-    message.value = 'Pengajuan ditolak — pasien telah dinotifikasi.'
+    message.value = ''
+    success('Pengajuan ditolak — pasien telah dinotifikasi.', 'Berhasil')
     await fetchPendingRequests()
   } catch (e: any) {
     error.value = e.message || 'Gagal menolak pengajuan'
+    alertError(error.value, 'Gagal')
   } finally {
     decidingId.value = null
   }
@@ -118,9 +125,20 @@ async function fetchSchedules() {
   }
 }
 
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   fetchSchedules()
   fetchPendingRequests()
+  // Polling realtime setiap 30 detik agar booking baru dari pasien langsung tampil
+  pollingTimer = setInterval(() => {
+    fetchPendingRequests()
+    fetchSchedules()
+  }, 30_000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
 })
 
 async function toggleAvailable(sched: any) {
@@ -146,24 +164,43 @@ async function addSchedule() {
       body: JSON.stringify(form.value),
     })
     modalOpen.value = false
-    message.value = 'Jadwal praktek berhasil ditambahkan!'
+    message.value = ''
+    success('Jadwal praktek berhasil ditambahkan!', 'Berhasil')
     await fetchSchedules()
   } catch (err: any) {
     error.value = err.message || 'Gagal menambahkan jadwal'
+    alertError(error.value, 'Gagal')
   } finally {
     isSubmitting.value = false
   }
 }
 
-async function deleteSchedule(id: number) {
-  if (!confirm('Yakin ingin menghapus jadwal ini?')) return
+// ── Hapus jadwal (dialog konfirmasi custom) ─────────────────────────────────
+const deleteOpen = ref(false)
+const deleteTarget = ref<any>(null)
+const isDeleting = ref(false)
+
+function askDelete(sched: any) {
+  deleteTarget.value = sched
+  deleteOpen.value = true
+}
+
+async function doDeleteSchedule() {
+  if (!deleteTarget.value) return
+  isDeleting.value = true
   try {
-    await apiFetch(`psikolog/schedules/${id}`, {
+    await apiFetch(`psikolog/schedules/${deleteTarget.value.id}`, {
       method: 'DELETE',
     })
+    deleteOpen.value = false
+    deleteTarget.value = null
+    success('Jadwal praktek berhasil dihapus.', 'Berhasil')
     await fetchSchedules()
-  } catch (e) {
+  } catch (e: any) {
     console.error('Failed deleting schedule', e)
+    alertError(e.message || 'Gagal menghapus jadwal', 'Gagal')
+  } finally {
+    isDeleting.value = false
   }
 }
 </script>
@@ -183,11 +220,10 @@ async function deleteSchedule(id: number) {
     </PageHeader>
 
     <div
-      v-if="message"
-      class="mb-4 flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-xs font-medium text-emerald-600 dark:text-emerald-400"
+      v-if="error"
+      class="mb-4 rounded-xl bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400"
     >
-      <CheckCircleIcon class="h-4 w-4 shrink-0" />
-      {{ message }}
+      {{ error }}
     </div>
 
     <!-- ================= PERMINTAAN MENUNGGU PERSETUJUAN ================= -->
@@ -290,7 +326,7 @@ async function deleteSchedule(id: number) {
             type="button"
             class="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-rose-500/10 hover:text-rose-600"
             title="Hapus jadwal"
-            @click="deleteSchedule(sched.id)"
+            @click="askDelete(sched)"
           >
             <TrashIcon class="h-4 w-4" />
           </button>
@@ -330,6 +366,17 @@ async function deleteSchedule(id: number) {
         </BaseButton>
       </form>
     </BaseModal>
+
+    <!-- ================= DIALOG KONFIRMASI HAPUS JADWAL ================= -->
+    <BaseConfirm
+      v-model:open="deleteOpen"
+      title="Hapus Jadwal Praktek?"
+      :message="`Jadwal ${dayNames[deleteTarget?.day_of_week] ?? ''} ${deleteTarget?.start_time ?? ''}–${deleteTarget?.end_time ?? ''} akan dihapus permanen. Slot pada jadwal ini tidak dapat di-booking lagi.`"
+      confirm-text="Ya, Hapus"
+      tone="danger"
+      :loading="isDeleting"
+      @confirm="doDeleteSchedule"
+    />
 
     <!-- ================= MODAL TOLAK PENGAJUAN ================= -->
     <BaseModal

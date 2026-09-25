@@ -35,7 +35,7 @@ class VerifyEmailOtp extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('Kode Verifikasi Email — :app', ['app' => config('app.name', 'Rumah Natasy')]),
+            subject: __('Kode Verifikasi Email — :app', ['app' => config('app.name', 'Rumah Nafasy')]),
         );
     }
 
@@ -48,7 +48,7 @@ class VerifyEmailOtp extends Mailable implements ShouldQueue
      */
     public function build(): static
     {
-        $logo = public_path('logo/rumah-natasy-256.png');
+        $logo = public_path('logo/rumah-nafasy-256.png');
 
         if (is_file($logo)) {
             $this->logoPath = $logo;

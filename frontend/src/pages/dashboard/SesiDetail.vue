@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -56,23 +56,34 @@ const cancelReason = ref('')
 const isSubmittingCancel = ref(false)
 const cancelError = ref('')
 
-async function loadBooking() {
-  loading.value = true
-  notFound.value = false
+async function loadBooking(silent = false) {
+  if (!silent) {
+    loading.value = true
+    notFound.value = false
+  }
   try {
     const res = await apiFetch(`pasien/bookings/${route.params.id}`)
     booking.value = res.data
     if (!booking.value) notFound.value = true
   } catch (e) {
     console.error('Failed loading booking detail', e)
-    notFound.value = true
+    // Saat polling silent, jangan langsung tandai notFound (bisa jadi gangguan jaringan)
+    if (!silent) notFound.value = true
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   loadBooking()
+  // Polling realtime setiap 30 detik (silent — tanpa flash skeleton)
+  pollingTimer = setInterval(() => loadBooking(true), 30_000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
 })
 
 // ── Timeline progres ────────────────────────────────────────────────────────

@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
         // Hapus admin lama jika ada (migrasi dari dummy)
         User::where('email', 'admin@rumahnatasy.id')
             ->whereDoesntHave('roles', fn($q) => $q->where('name', '!=', 'admin'))
-            ->where('name', 'Admin Rumah Natasy')
+            ->where('name', 'Admin Rumah Nafasy')
             ->delete();
 
         // ==================== PSIKOLOG ====================

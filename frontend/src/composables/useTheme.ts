@@ -1,7 +1,7 @@
-import { ref } from 'vue'
+﻿import { ref } from 'vue'
 
 type Theme = 'light' | 'dark'
-const STORAGE_KEY = 'rumah-natasy-theme'
+const STORAGE_KEY = 'rumah-nafasy-theme'
 const theme = ref<Theme>('light')
 
 const applyTheme = (nextTheme: Theme) => {

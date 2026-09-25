@@ -82,25 +82,25 @@ const currentSection = computed(() =>
       :style="{ borderColor: 'var(--sidebar-border)' }"
     >
       <!-- Brand + toggle -->
-      <div
-        class="flex h-14 shrink-0 items-center gap-2.5 border-b px-3"
-        :class="collapsed ? 'justify-center' : ''"
-        :style="{ borderColor: 'var(--sidebar-border)' }"
-      >
         <div
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)] font-display text-xs font-bold tracking-tight text-white"
+          class="flex h-14 shrink-0 items-center gap-2.5 border-b px-3"
+          :class="collapsed ? 'justify-center' : ''"
+          :style="{ borderColor: 'var(--sidebar-border)' }"
         >
-          RN
+          <img
+            src="/favicon.svg"
+            alt="Logo Rumah Nafasy"
+            class="h-8 w-8 shrink-0 rounded-lg object-contain"
+          />
+          <div v-if="!collapsed" class="min-w-0 flex-1">
+            <span class="block truncate text-[13px] font-semibold leading-tight text-[var(--sidebar-text-active)]">
+              Rumah Nafasy
+            </span>
+            <span class="block text-[10px] font-medium uppercase tracking-wider text-[var(--sidebar-text)]">
+              {{ auth.isPsikolog ? 'Portal Psikolog' : 'Portal Pasien' }}
+            </span>
+          </div>
         </div>
-        <div v-if="!collapsed" class="min-w-0 flex-1">
-          <span class="block truncate text-[13px] font-semibold leading-tight text-[var(--sidebar-text-active)]">
-            Rumah Natasy
-          </span>
-          <span class="block text-[10px] font-medium uppercase tracking-wider text-[var(--sidebar-text)]">
-            {{ auth.isPsikolog ? 'Portal Psikolog' : 'Portal Pasien' }}
-          </span>
-        </div>
-      </div>
 
       <!-- Nav -->
       <SidebarNav :collapsed="collapsed" />
@@ -126,14 +126,14 @@ const currentSection = computed(() =>
             class="flex h-14 shrink-0 items-center gap-2.5 border-b px-3"
             :style="{ borderColor: 'var(--sidebar-border)' }"
           >
-            <div
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)] font-display text-xs font-bold text-white"
-            >
-              RN
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="Logo Rumah Nafasy"
+              class="h-8 w-8 shrink-0 rounded-lg object-contain"
+            />
             <div class="min-w-0 flex-1">
               <span class="block truncate text-[13px] font-semibold leading-tight text-[var(--sidebar-text-active)]">
-                Rumah Natasy
+                Rumah Nafasy
               </span>
               <span class="block text-[10px] font-medium uppercase tracking-wider text-[var(--sidebar-text)]">
                 {{ auth.isPsikolog ? 'Portal Psikolog' : 'Portal Pasien' }}

@@ -66,7 +66,7 @@ class TestResendEmail extends Command
 
         // ── Jalur queue (persis alur OTP asli) ───────────────────────────
         if ($this->option('queue')) {
-            Mail::to($email)->queue(new \App\Mail\VerifyEmailOtp('Rumah Natasy', $code, $email, 10));
+            Mail::to($email)->queue(new \App\Mail\VerifyEmailOtp('Rumah Nafasy', $code, $email, 10));
             $this->info('Mailable di-push ke queue — pastikan worker jalan: php artisan queue:work');
             $this->line('Cek hasil kirim: dashboard Resend → Logs (200 = sukses, 403 = from/domain ditolak).');
 
@@ -76,9 +76,9 @@ class TestResendEmail extends Command
         // ── Jalur sinkron: error Resend LANGSUNG terlihat ────────────────
         try {
             Mail::raw(
-                "Tes pipeline Resend — Rumah Natasy.\n\nKode tes Anda: {$code}\n\n(Baik kalau email ini sampai — konfigurasi Resend sudah benar.)",
+                "Tes pipeline Resend — Rumah Nafasy.\n\nKode tes Anda: {$code}\n\n(Baik kalau email ini sampai — konfigurasi Resend sudah benar.)",
                 function ($message) use ($email, $fromName) {
-                    $message->to($email)->subject("Tes Resend — Rumah Natasy [{$fromName}]");
+                    $message->to($email)->subject("Tes Resend — Rumah Nafasy [{$fromName}]");
                 }
             );
         } catch (\Throwable $e) {

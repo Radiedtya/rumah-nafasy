@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { CheckCircleIcon, ShieldCheckIcon, CameraIcon, TrashIcon, XMarkIcon } from '@heroicons/vue/24/outline'
@@ -304,7 +304,7 @@ async function handleSubmit() {
   <div class="mx-auto max-w-3xl">
     <PageHeader
       title="Profil Saya"
-      description="Kelola informasi akun dan status kredensial Anda di Rumah Natasy."
+      description="Kelola informasi akun dan status kredensial Anda di Rumah Nafasy."
     />
 
     <!-- Toast success -->

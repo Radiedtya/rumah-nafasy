@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import HomeStats from '../components/section/home/HomeStats.vue'
 import HomeHowItWorks from '../components/section/home/HomeHowItWorks.vue'
 import HomePsikolog from '../components/section/home/HomePsikolog.vue'
@@ -49,7 +49,7 @@ import HomeFaq from '../components/section/home/HomeFaq.vue'
   <!-- ===== KATEGORI LAYANAN ===== -->
   <HomeKategori />
 
-  <!-- ===== KENAPA RUMAH NATASY ===== -->
+  <!-- ===== KENAPA Rumah Nafasy ===== -->
   <HomeKenapa />
 
   <!-- ===== TESTIMONI ===== -->

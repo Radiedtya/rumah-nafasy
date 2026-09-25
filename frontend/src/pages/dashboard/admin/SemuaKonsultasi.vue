@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../../../lib/api'
 import PageHeader from '../../../components/dashboard/PageHeader.vue'
 import BaseCard from '../../../components/ui/BaseCard.vue'
@@ -52,7 +52,9 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
+let currentPage = 1
 async function fetchList(page = 1) {
+  currentPage = page
   isLoading.value = true
   try {
     const params = new URLSearchParams({ page: String(page), per_page: '15' })
@@ -65,7 +67,17 @@ async function fetchList(page = 1) {
   } catch { } finally { isLoading.value = false }
 }
 
-onMounted(() => fetchList())
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  fetchList()
+  // Polling realtime setiap 30 detik
+  pollingTimer = setInterval(() => fetchList(currentPage), 30_000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
+})
 </script>
 
 <template>

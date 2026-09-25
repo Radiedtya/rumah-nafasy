@@ -46,7 +46,7 @@ class PendingRegistration extends Model
                 'is_active' => true,
             ]);
 
-            $user->assignRole('pasien');
+            $user->assignRoleSafe('pasien');
 
             $this->delete();
 

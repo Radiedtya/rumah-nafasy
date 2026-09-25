@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { apiFetch } from '../../lib/api'
@@ -8,7 +8,6 @@ import {
   ClockIcon,
   VideoCameraIcon,
   DocumentTextIcon,
-  CheckCircleIcon,
   LockClosedIcon,
   PlayIcon,
   StopIcon,
@@ -24,6 +23,10 @@ import BaseBadge from '../../components/ui/BaseBadge.vue'
 import BaseSkeleton from '../../components/ui/BaseSkeleton.vue'
 import BaseEmpty from '../../components/ui/BaseEmpty.vue'
 import BaseModal from '../../components/ui/BaseModal.vue'
+import BaseConfirm from '../../components/ui/BaseConfirm.vue'
+import { useAlert } from '../../composables/useAlert'
+
+const { success, error: alertError } = useAlert()
 
 const bookings = ref<any[]>([])
 const loading = ref(true)
@@ -50,8 +53,16 @@ async function fetchBookings() {
   }
 }
 
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   fetchBookings()
+  // Polling realtime setiap 30 detik agar booking baru dari pasien langsung tampil
+  pollingTimer = setInterval(() => fetchBookings(), 30_000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
 })
 
 // ── Persetujuan pengajuan booking (alur tanpa pembayaran) ─────────────────
@@ -74,10 +85,12 @@ async function decideRequest(booking: any, decision: 'confirmed' | 'rejected') {
       method: 'PUT',
       body: JSON.stringify({ status: 'confirmed' }),
     })
-    message.value = `Pengajuan dari ${booking.pasien?.name || 'pasien'} disetujui — pasien telah diberi tahu via WhatsApp.`
+    message.value = ''
+    success(`Pengajuan dari ${booking.pasien?.name || 'pasien'} disetujui — pasien telah diberi tahu via WhatsApp.`, 'Berhasil')
     await fetchBookings()
   } catch (err: any) {
     error.value = err.message || 'Gagal menyetujui pengajuan'
+    alertError(error.value, 'Gagal')
   } finally {
     decidingId.value = null
   }
@@ -97,10 +110,12 @@ async function submitReject() {
     })
     rejectOpen.value = false
     rejectTarget.value = null
-    message.value = 'Pengajuan ditolak — pasien telah diberi tahu beserta alasan.'
+    message.value = ''
+    success('Pengajuan ditolak — pasien telah diberi tahu beserta alasan.', 'Berhasil')
     await fetchBookings()
   } catch (err: any) {
     error.value = err.message || 'Gagal menolak pengajuan'
+    alertError(error.value, 'Gagal')
   } finally {
     decidingId.value = null
   }
@@ -142,23 +157,42 @@ async function startConsultation(booking: any) {
     await apiFetch(`psikolog/bookings/${booking.id}/consultation/start`, {
       method: 'POST',
     })
-    message.value = 'Sesi konsultasi resmi dimulai!'
+    message.value = ''
+    success('Sesi konsultasi resmi dimulai!', 'Berhasil')
     await fetchBookings()
   } catch (err: any) {
     error.value = err.message || 'Gagal memulai konsultasi'
+    alertError(error.value, 'Gagal')
   }
 }
 
-async function endConsultation(consultationId: number) {
-  if (!confirm('Apakah sesi konsultasi ini sudah selesai?')) return
+// ── Akhiri konsultasi (dialog konfirmasi custom) ────────────────────────────
+const endOpen = ref(false)
+const endTargetId = ref<number | null>(null)
+const isEnding = ref(false)
+
+function askEndConsultation(consultationId: number) {
+  endTargetId.value = consultationId
+  endOpen.value = true
+}
+
+async function doEndConsultation() {
+  if (!endTargetId.value) return
+  isEnding.value = true
   try {
-    await apiFetch(`psikolog/consultations/${consultationId}/end`, {
+    await apiFetch(`psikolog/consultations/${endTargetId.value}/end`, {
       method: 'POST',
     })
-    message.value = 'Konsultasi telah diselesaikan. Terima kasih atas sesi ini!'
+    endOpen.value = false
+    endTargetId.value = null
+    message.value = ''
+    success('Konsultasi telah diselesaikan. Terima kasih atas sesi ini!', 'Berhasil')
     await fetchBookings()
   } catch (err: any) {
     error.value = err.message || 'Gagal menyelesaikan konsultasi'
+    alertError(error.value, 'Gagal')
+  } finally {
+    isEnding.value = false
   }
 }
 
@@ -218,14 +252,6 @@ function formatDate(d: string) {
       title="Konsultasi & Catatan Klinis"
       description="Mulai sesi konsultasi pasien, bergabung ke ruang video call Jitsi, dan simpan catatan medis terenkripsi."
     />
-
-    <div
-      v-if="message"
-      class="mb-4 flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-xs font-medium text-emerald-600 dark:text-emerald-400"
-    >
-      <CheckCircleIcon class="h-4 w-4 shrink-0" />
-      {{ message }}
-    </div>
 
     <div v-if="error && !notesModalOpen" class="mb-4 rounded-xl bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400">
       {{ error }}
@@ -371,7 +397,7 @@ function formatDate(d: string) {
             v-if="booking.status === 'in_progress' && booking.consultation?.status === 'in_progress'"
             variant="danger"
             size="sm"
-            @click="endConsultation(booking.consultation.id)"
+            @click="askEndConsultation(booking.consultation.id)"
           >
             <StopIcon class="h-3.5 w-3.5" />
             Selesaikan
@@ -379,6 +405,17 @@ function formatDate(d: string) {
         </div>
       </BaseCard>
     </div>
+
+    <!-- ================= DIALOG KONFIRMASI AKHIRI KONSULTASI ================= -->
+    <BaseConfirm
+      v-model:open="endOpen"
+      title="Selesaikan Konsultasi?"
+      message="Pastikan sesi konsultasi sudah benar-benar selesai. Status akan diubah menjadi selesai dan durasi aktual akan dicatat."
+      confirm-text="Ya, Selesaikan"
+      tone="primary"
+      :loading="isEnding"
+      @confirm="doEndConsultation"
+    />
 
     <!-- ================= MODAL CATATAN KLINIS ================= -->
     <BaseModal

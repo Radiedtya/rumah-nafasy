@@ -19,13 +19,14 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            // email:rfc,dns — DNS check aktif di production (blokir domain
-            // tanpa MX); di testing dimatikan agar test tidak bergantung
-            // pada jaringan/DNS eksternal.
+            // email:rfc,dns — DNS check HANYA aktif di production (blokir
+            // domain tanpa MX). Di local/testing/staging cukup email:rfc —
+            // lebih deterministik: tidak bergantung pada jaringan/DNS
+            // eksternal maupun kondisi config cache (APP_ENV ter-bake).
             'email' => [
                 'required',
                 'string',
-                app()->environment('testing') ? 'email:rfc' : 'email:rfc,dns',
+                app()->environment('production') ? 'email:rfc,dns' : 'email:rfc',
                 'max:255',
                 // Terdaftar di users → blokir. Email yang sedang MENUNGGU
                 // OTP (pending_registrations) TIDAK diblokir di sini: register

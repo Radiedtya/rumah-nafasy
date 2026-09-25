@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+﻿<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../../../lib/api'
 import PageHeader from '../../../components/dashboard/PageHeader.vue'
 import BaseCard from '../../../components/ui/BaseCard.vue'
@@ -62,7 +62,9 @@ function statusLabel(s: string) {
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
+let currentPage = 1
 async function fetchList(page = 1) {
+  currentPage = page
   isLoading.value = true
   try {
     const params = new URLSearchParams({ page: String(page), per_page: '10' })
@@ -83,7 +85,18 @@ async function fetchSpecializations() {
   } catch { }
 }
 
-onMounted(() => { fetchList(); fetchSpecializations() })
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  fetchList()
+  fetchSpecializations()
+  // Polling realtime setiap 30 detik
+  pollingTimer = setInterval(() => fetchList(currentPage), 30_000)
+})
+
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
+})
 
 // ── Validasi frontend ─────────────────────────────────────────────────────────
 function validateForm(isEdit: boolean): boolean {
@@ -444,7 +457,7 @@ async function quickAction(id: number, action: 'verify' | 'activate' | 'suspend'
                   </div>
                   <div class="form-group">
                     <label>Email *</label>
-                    <input v-model="form.email" type="email" placeholder="nama@rumahnatasy.id" :class="{ 'is-error': formErrors.email }" />
+                    <input v-model="form.email" type="email" placeholder="nama@rumah-nafasy.id" :class="{ 'is-error': formErrors.email }" />
                     <span v-if="formErrors.email" class="form-error">{{ formErrors.email }}</span>
                   </div>
                   <div class="form-group">

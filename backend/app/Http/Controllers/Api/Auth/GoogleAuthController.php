@@ -247,6 +247,8 @@ class GoogleAuthController extends Controller
         // 1. Sudah pernah link via google_id?
         $user = User::where('google_id', $googleUser->getId())->first();
         if ($user) {
+            $this->ensureDefaultRole($user);
+
             return $user;
         }
 
@@ -259,6 +261,8 @@ class GoogleAuthController extends Controller
                     'email_verified_at' => $user->email_verified_at ?? now(),
                 ])->save();
             }
+
+            $this->ensureDefaultRole($user);
 
             return $user;
         }
@@ -273,9 +277,23 @@ class GoogleAuthController extends Controller
             'is_active' => true,
         ]);
 
-        $user->assignRole('pasien');
+        $user->assignRoleSafe('pasien');
 
         return $user;
+    }
+
+    /**
+     * Self-healing: user yang terlanjur dibuat TANPA role (efek bug lama
+     * saat tabel roles kosong) dipulihkan otomatis saat login berikutnya.
+     * User yang SUDAH punya role (admin/psikolog/pasien) tidak tersentuh.
+     */
+    private function ensureDefaultRole(User $user): void
+    {
+        if ($user->roles()->exists()) {
+            return;
+        }
+
+        $user->assignRoleSafe('pasien');
     }
 
     /**
