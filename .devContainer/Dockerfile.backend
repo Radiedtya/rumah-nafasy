@@ -1,0 +1,46 @@
+FROM php:8.3-apache
+
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/backend/public
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        unzip \
+        libicu-dev \
+        libonig-dev \
+        libzip-dev \
+        libpng-dev \
+        libjpeg62-turbo-dev \
+        libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        exif \
+        gd \
+        intl \
+        mbstring \
+        opcache \
+        pcntl \
+        pdo_sqlite \
+        zip \
+    && a2enmod rewrite headers expires \
+    && sed -ri "s#DocumentRoot /var/www/html#DocumentRoot ${APACHE_DOCUMENT_ROOT}#" /etc/apache2/sites-available/000-default.conf \
+    && sed -ri "s#<Directory /var/www/>#<Directory ${APACHE_DOCUMENT_ROOT}/>#" /etc/apache2/apache2.conf \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+COPY backend/composer.json backend/composer.lock ./backend/
+RUN cd backend && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+COPY backend ./backend
+COPY .devContainer/backend-entrypoint.sh /usr/local/bin/backend-entrypoint
+RUN chmod +x /usr/local/bin/backend-entrypoint \
+    && mkdir -p backend/storage/app/public backend/storage/framework/cache backend/storage/framework/sessions backend/storage/framework/views backend/storage/logs \
+    && chown -R www-data:www-data backend/storage backend/bootstrap/cache
+
+WORKDIR /var/www/html/backend
+
+EXPOSE 80
+ENTRYPOINT ["/usr/local/bin/backend-entrypoint"]

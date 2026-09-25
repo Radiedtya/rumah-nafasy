@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: .devContainer/Dockerfile.backend
+    ports:
+      - "8000:80"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:?Set APP_KEY before starting the backend}
+      APP_URL: ${APP_URL:-http://localhost:8000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      GOOGLE_ALLOWED_SPA_ORIGINS: ${GOOGLE_ALLOWED_SPA_ORIGINS:-http://localhost:3000}
+      GOOGLE_DEFAULT_SPA_ORIGIN: ${GOOGLE_DEFAULT_SPA_ORIGIN:-http://localhost:3000}
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/backend/storage/app/database.sqlite
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-0}
+    volumes:
+      - backend_storage:/var/www/html/backend/storage
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: .devContainer/Dockerfile.frontend
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8000}
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  backend_storage:
