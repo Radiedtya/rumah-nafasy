@@ -46,7 +46,7 @@ const closeMobile = () => { mobileOpen.value = false }
   <header class="fixed top-0 right-0 left-0 z-50 w-full px-6 pt-0">
     <div class="mx-auto w-full max-w-[1420px] overflow-hidden rounded-b-[30px] shadow-[0_1px_0_rgba(17,17,17,0.08)]">
       <!-- Announcement strip -->
-      <div class="flex h-[40px] items-center justify-between bg-[#4a0035] px-6 text-white sm:px-7">
+      <!-- <div class="flex h-[40px] items-center justify-between bg-[#4a0035] px-6 text-white sm:px-7">
         <a href="#mulai" class="inline-flex min-w-0 items-center gap-3 no-underline" aria-label="Mulai konsultasi">
           <span class="hidden text-[20px] font-extrabold leading-none tracking-[-0.08em] text-[#fffbf0] sm:inline">rumah</span>
           <span class="truncate text-[13px] font-medium tracking-[-0.01em] text-[#f7b6f5] sm:text-[15px]">Temani perjalanan kesehatan mental Anda.</span>
@@ -55,7 +55,7 @@ const closeMobile = () => { mobileOpen.value = false }
           Mulai sekarang
           <span aria-hidden="true" class="text-[17px] leading-none">→</span>
         </a>
-      </div>
+      </div> -->
 
       <nav
         class="flex h-[58px] items-center gap-2 bg-[var(--surface)] px-6 sm:px-7"
