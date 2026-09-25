@@ -176,7 +176,9 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   width: 100%;
   max-width: 1420px;
   margin: 0 auto;
-  padding: 0 max(40px, (100vw - 1420px) / 2 + 40px);
+  /* Padding tetap — formula (100vw - 1420px)/2 menumbuhkan padding di dalam
+     max-width (border-box) sehingga kolom footer berhimpit saat viewport melebar. */
+  padding: 0 40px;
 }
 
 /* ══ Top grid ══ */

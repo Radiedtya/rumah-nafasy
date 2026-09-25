@@ -106,10 +106,13 @@ const faqs = [
 }
 
 /* ── Eyebrow ── */
+/* Padding tetap — formula (100% - 1280px)/2 menumbuhkan padding di dalam
+   width cap (border-box) sehingga konten menyempit saat viewport melebar. */
 .faq-header {
-  width: min(100%, 1280px);
+  width: 100%;
+  max-width: 1280px;
   margin: 0 auto 48px;
-  padding: 0 max(24px, (100% - 1280px) / 2 + 24px);
+  padding: 0 24px;
 }
 
 .faq-title {
@@ -134,9 +137,10 @@ const faqs = [
 .faq-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  width: min(100%, 1280px);
+  width: 100%;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 max(24px, (100% - 1280px) / 2 + 24px);
+  padding: 0 24px;
   gap: 64px;
   align-items: start;
 }

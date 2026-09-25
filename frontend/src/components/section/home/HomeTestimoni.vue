@@ -218,10 +218,13 @@ onBeforeUnmount(() => {
 }
 
 /* ── Heading area ── */
+/* Padding tetap — formula (100% - 1280px)/2 menumbuhkan padding di dalam
+   width cap (border-box) sehingga konten menyempit saat viewport melebar. */
 .testimoni-top {
-  width: min(100%, 1280px);
+  width: 100%;
+  max-width: 1280px;
   margin: 0 auto 56px;
-  padding: 0 max(24px, (100% - 1280px) / 2 + 24px);
+  padding: 0 24px;
 }
 
 .testimoni-eyebrow {
@@ -273,9 +276,10 @@ onBeforeUnmount(() => {
 /* ── Carousel row ── */
 .testimoni-row {
   display: flex;
-  width: min(100%, 1280px);
+  width: 100%;
+  max-width: 1280px;
   margin: 0 auto;
-  padding-left: max(24px, (100vw - 1280px) / 2 + 24px);
+  padding-left: 24px;
   align-items: flex-start;
   gap: 48px;
 }
