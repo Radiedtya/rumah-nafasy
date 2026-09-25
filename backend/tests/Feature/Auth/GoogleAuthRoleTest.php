@@ -84,4 +84,35 @@ class GoogleAuthRoleTest extends TestCase
         $this->assertTrue($user->fresh()->hasRole('pasien'));
         $this->assertTrue($user->fresh()->isPasien());
     }
+
+    public function test_ensure_default_role_memulihkan_user_tanpa_role(): void
+    {
+        $controller = new \App\Http\Controllers\Api\Auth\GoogleAuthController;
+        $method = new \ReflectionMethod($controller, 'ensureDefaultRole');
+        $method->setAccessible(true);
+
+        $user = User::factory()->create();
+        $this->assertFalse($user->hasRole('pasien'));
+
+        $method->invoke($controller, $user);
+
+        $this->assertTrue($user->fresh()->hasRole('pasien'));
+    }
+
+    public function test_ensure_default_role_tidak_menimpa_role_existing(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+
+        $controller = new \App\Http\Controllers\Api\Auth\GoogleAuthController;
+        $method = new \ReflectionMethod($controller, 'ensureDefaultRole');
+        $method->setAccessible(true);
+
+        $psikolog = User::factory()->create();
+        $psikolog->assignRole('psikolog');
+
+        $method->invoke($controller, $psikolog);
+
+        $this->assertTrue($psikolog->fresh()->hasRole('psikolog'));
+        $this->assertFalse($psikolog->fresh()->hasRole('pasien'));
+    }
 }
