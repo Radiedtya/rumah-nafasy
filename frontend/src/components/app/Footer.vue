@@ -8,7 +8,7 @@
         <!-- Brand -->
         <div class="footer-brand-col">
           <a href="/" class="footer-brand" aria-label="Beranda Rumah Nafasy">
-            <img src="/icon.svg" alt="" aria-hidden="true" class="footer-brand-icon" />
+            <img src="/icons/64.png" alt="" aria-hidden="true" class="footer-brand-icon" />
             <span class="footer-brand-name">Rumah Nafasy</span>
           </a>
         </div>

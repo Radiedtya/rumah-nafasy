@@ -19,6 +19,7 @@ class BookingController extends Controller
             'psikolog.psikologProfile.specialization',
             'order.category',
             'order.duration',
+            'requestedCategory',
             'consultation',
         ]);
 

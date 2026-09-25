@@ -46,8 +46,15 @@ class BookingResource extends JsonResource
                 return $this->requestedCategory ? [
                     'id' => $this->requestedCategory->id,
                     'name' => $this->requestedCategory->name,
+                    'base_price' => (float) $this->requestedCategory->base_price,
                 ] : null;
             }),
+            // Booking langsung tidak memiliki order; harga ini adalah estimasi berdasarkan durasi.
+            'estimated_price' => $this->order
+                ? (float) $this->order->calculated_price
+                : ($this->requestedCategory
+                    ? (float) $this->requestedCategory->base_price * (($this->duration_minutes ?: 60) / 60)
+                    : null),
             'rejected_reason' => $this->rejected_reason,
             'complaint_markdown' => $this->complaint_markdown,
             'booking_date' => $this->booking_date?->format('Y-m-d'),

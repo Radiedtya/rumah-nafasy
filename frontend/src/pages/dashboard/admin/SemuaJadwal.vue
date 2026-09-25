@@ -19,6 +19,9 @@ interface Booking {
   psikolog: Person | null
   booking_date: string; start_time: string; end_time: string
   status: string; room_id: string | null
+  consultation_type: string; duration_minutes: number | null
+  requested_category: { id: number; name: string; base_price: number } | null
+  estimated_price: number | null
   consultation: { id: number; status: string } | null
   created_at: string
 }
@@ -77,6 +80,9 @@ onUnmounted(() => {
 
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
+function consultationLabel(type: string) {
+  return type === 'offline' ? 'Offline' : 'Video Call'
 }
 </script>
 
@@ -171,12 +177,16 @@ function initials(name: string) {
               </td>
               <!-- Layanan -->
               <td class="px-4 py-3 text-[var(--text)]">
-                <div>{{ b.order?.category_name ?? '—' }}</div>
-                <div class="text-[var(--muted)]">{{ b.order?.duration_name }} · {{ b.order?.consultation_type }}</div>
+                <div>{{ b.order?.category_name ?? b.requested_category?.name ?? 'Layanan konsultasi' }}</div>
+                <div class="text-[var(--muted)]">
+                  {{ b.order?.duration_name ?? (b.duration_minutes ? `${b.duration_minutes} menit` : 'Durasi belum ditentukan') }}
+                  · {{ b.order?.consultation_type ? consultationLabel(b.order.consultation_type) : consultationLabel(b.consultation_type) }}
+                </div>
               </td>
               <!-- Harga -->
               <td class="px-4 py-3 text-right font-mono text-[var(--text)]">
-                {{ b.order ? fmtCurrency(b.order.calculated_price) : '—' }}
+                <span v-if="b.order || b.estimated_price !== null">{{ fmtCurrency(b.order?.calculated_price ?? b.estimated_price ?? 0) }}</span>
+                <span v-else class="text-[var(--muted)]">Belum tersedia</span>
               </td>
               <!-- Status -->
               <td class="px-4 py-3 text-center">

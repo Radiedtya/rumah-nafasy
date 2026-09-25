@@ -287,7 +287,7 @@ async function handleRegister() {
     <div class="reg-inner">
       <div class="reg-header">
         <RouterLink to="/" class="reg-brand" aria-label="Kembali ke beranda Rumah Nafasy">
-          <img src="/icon.svg" alt="" aria-hidden="true" />
+          <img src="/icons/64.png" alt="" aria-hidden="true" />
           Rumah Nafasy
         </RouterLink>
         <h2 class="reg-heading">Buat akun baru</h2>
