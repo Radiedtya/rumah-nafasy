@@ -13,10 +13,10 @@ class UserSeeder extends Seeder
         // ==================== OWNER / SUPER ADMIN ====================
 
         $admin = User::firstOrCreate(
-            ['email' => 'nairha@rumahnatasy.id'],
+            ['email' => 'admin@rumahnafasy.id'],
             [
-                'name' => 'Nairha',
-                'password' => Hash::make('nairha@rumahnatasy2024!'),
+                'name' => 'Admin',
+                'password' => Hash::make('admin@rumahnafasy2026!'),
                 'phone' => '+6281234567890',
                 'email_verified_at' => now(),
                 'phone_verified_at' => now(),
@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
         $admin->syncRoles(['admin']);
 
         // Hapus admin lama jika ada (migrasi dari dummy)
-        User::where('email', 'admin@rumahnatasy.id')
+        User::where('email', 'admin@rumahnafasy.id')
             ->whereDoesntHave('roles', fn($q) => $q->where('name', '!=', 'admin'))
             ->where('name', 'Admin Rumah Nafasy')
             ->delete();
