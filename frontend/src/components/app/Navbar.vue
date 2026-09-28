@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useTheme } from '../../composables/useTheme'
+import SpecularButton from '../ui/SpecularButton.vue'
 
 type NavigationLink = {
   label: string
@@ -19,6 +20,20 @@ defineProps<{
 
 const { theme, toggleTheme } = useTheme()
 const mobileOpen = ref(false)
+const navHighlightStates = ref<Record<string, 'entering' | 'active' | 'exiting'>>({})
+
+const setNavHighlight = (href: string, state: 'entering' | 'exiting') => {
+  navHighlightStates.value = { ...navHighlightStates.value, [href]: state }
+}
+
+const finishNavHighlight = (href: string, event: AnimationEvent) => {
+  if (event.animationName === 'nav-highlight-enter') {
+    navHighlightStates.value = { ...navHighlightStates.value, [href]: 'active' }
+  } else if (event.animationName === 'nav-highlight-exit') {
+    const { [href]: _, ...remainingStates } = navHighlightStates.value
+    navHighlightStates.value = remainingStates
+  }
+}
 
 let savedScrollY = 0
 watch(mobileOpen, (open) => {
@@ -77,7 +92,11 @@ const closeMobile = () => { mobileOpen.value = false }
             v-for="link in links"
             :key="link.href"
             :href="link.href"
-            class="rounded-lg px-3.5 py-2 text-[15px] font-normal tracking-[-0.02em] text-[var(--text)] no-underline transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--text)_7%,transparent)] hover:text-[var(--ink)]"
+            class="nav-highlight px-3.5 py-2 text-[15px] font-normal tracking-[-0.02em] text-[var(--text)] no-underline hover:text-white"
+            :class="`nav-highlight--${navHighlightStates[link.href] ?? 'hidden'}`"
+            @pointerenter="setNavHighlight(link.href, 'entering')"
+            @pointerleave="setNavHighlight(link.href, 'exiting')"
+            @animationend="finishNavHighlight(link.href, $event)"
           >{{ link.label }}</a>
         </div>
 
@@ -92,14 +111,29 @@ const closeMobile = () => { mobileOpen.value = false }
             <SunIcon v-if="theme === 'light'" :size="12" aria-hidden="true" />
             <MoonIcon v-else :size="12" aria-hidden="true" />
           </button>
-          <RouterLink
-            to="/dashboard"
-            class="inline-flex h-[40px] items-center rounded-[12px] bg-[var(--ink)] px-4 text-[13px] font-semibold tracking-[-0.02em] text-[var(--inverse-text)] no-underline transition-opacity duration-150 hover:opacity-80"
-          >
-            Masuk Dashboard
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
-              <path d="M2.5 7h9M7.5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <RouterLink to="/dashboard" custom v-slot="{ navigate }">
+            <SpecularButton
+              size="sm"
+              :radius="12"
+              tint="#111111"
+              :tint-opacity="1"
+              :blur="0"
+              text-color="#ffffff"
+              line-color="#ffffff"
+              base-color="#111111"
+              :intensity="0.7"
+              :shine-size="10"
+              :shine-fade="40"
+              :thickness="1"
+              :speed="0.35"
+              follow-mouse
+              :proximity="250"
+              :auto-animate="false"
+              class="!h-[44px] !min-w-[176px] !px-6 !py-0 !text-[14px] !font-semibold tracking-[-0.02em] whitespace-nowrap"
+              @click="navigate"
+            >
+              Masuk Dashboard
+            </SpecularButton>
           </RouterLink>
         </div>
 
@@ -195,3 +229,52 @@ const closeMobile = () => { mobileOpen.value = false }
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.nav-highlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.nav-highlight::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #48008c;
+  content: '';
+}
+
+.nav-highlight--hidden::before {
+  clip-path: inset(0 0 0 100%);
+}
+
+.nav-highlight--entering::before {
+  animation: nav-highlight-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.nav-highlight--active::before,
+.nav-highlight:focus-visible::before {
+  clip-path: inset(0);
+}
+
+.nav-highlight--exiting::before {
+  animation: nav-highlight-exit 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes nav-highlight-enter {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0); }
+}
+
+@keyframes nav-highlight-exit {
+  from { clip-path: inset(0); }
+  to { clip-path: inset(0 0 0 100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-highlight--entering::before,
+  .nav-highlight--exiting::before {
+    animation-duration: 1ms;
+  }
+}
+</style>

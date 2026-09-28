@@ -16,7 +16,7 @@
         <!-- Perusahaan -->
         <div class="footer-col">
           <h3 class="footer-col-title">Perusahaan</h3>
-          <ul class="footer-links" role="list">
+          <ul class="footer-links" role="list" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <li><a href="#">Harga layanan</a></li>
             <li><a href="#">Ulasan klien</a></li>
             <li><a href="#">Karier</a></li>
@@ -33,7 +33,7 @@
         <!-- Sumber Daya -->
         <div class="footer-col">
           <h3 class="footer-col-title">Sumber Daya</h3>
-          <ul class="footer-links" role="list">
+          <ul class="footer-links" role="list" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <li><a href="#">Pusat bantuan</a></li>
             <li><a href="#">Komunitas kesehatan mental</a></li>
             <li><a href="#">Blog</a></li>
@@ -46,7 +46,7 @@
         <!-- Legal -->
         <div class="footer-col">
           <h3 class="footer-col-title">Legal</h3>
-          <ul class="footer-links" role="list">
+          <ul class="footer-links" role="list" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <li><a href="#">Kebijakan privasi</a></li>
             <li><a href="#">Syarat penggunaan</a></li>
             <li><a href="#">Aksesibilitas</a></li>
@@ -92,7 +92,7 @@
         </div>
 
         <div class="footer-bottom-right">
-          <nav class="footer-social" aria-label="Media sosial Rumah Nafasy">
+          <nav class="footer-social" aria-label="Media sosial Rumah Nafasy" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <a v-for="s in socials" :key="s.label" :href="s.href" target="_blank" rel="noreferrer" :aria-label="s.label" class="footer-social-link">
               <component :is="s.icon" aria-hidden="true" />
             </a>
@@ -136,6 +136,40 @@ defineProps<{
 
 const { theme, toggleTheme } = useTheme()
 const email = ref('')
+
+function getFooterLink(target: EventTarget | null): HTMLAnchorElement | null {
+  return target instanceof Element ? target.closest('a') : null
+}
+
+function setFooterHighlight(link: HTMLAnchorElement, state: 'entering' | 'exiting') {
+  link.classList.add('footer-highlight')
+  link.classList.remove('footer-highlight--hidden', 'footer-highlight--entering', 'footer-highlight--active', 'footer-highlight--exiting')
+  link.classList.add(`footer-highlight--${state}`)
+}
+
+function handleFooterPointerOver(event: PointerEvent) {
+  const link = getFooterLink(event.target)
+  if (!link || (event.relatedTarget instanceof Node && link.contains(event.relatedTarget))) return
+  setFooterHighlight(link, 'entering')
+}
+
+function handleFooterPointerOut(event: PointerEvent) {
+  const link = getFooterLink(event.target)
+  if (!link || (event.relatedTarget instanceof Node && link.contains(event.relatedTarget))) return
+  setFooterHighlight(link, 'exiting')
+}
+
+function handleFooterAnimationEnd(event: AnimationEvent) {
+  const link = getFooterLink(event.target)
+  if (!link) return
+  if (link.classList.contains('footer-highlight--entering')) {
+    link.classList.remove('footer-highlight--entering')
+    link.classList.add('footer-highlight--active')
+  } else if (link.classList.contains('footer-highlight--exiting')) {
+    link.classList.remove('footer-highlight--exiting')
+    link.classList.add('footer-highlight--hidden')
+  }
+}
 
 function submitEmail() {
   email.value = ''
@@ -237,6 +271,12 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 }
 
 .footer-links a {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px 4px;
+  margin: -2px -4px;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.4;
@@ -245,7 +285,53 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 }
 
 .footer-links a:hover {
-  color: var(--ink);
+  color: #fff;
+}
+
+.footer-links a:focus-visible {
+  color: #fff;
+}
+
+.footer-highlight::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #48008c;
+  content: '';
+}
+
+.footer-links a::before,
+.footer-social-link::before {
+  clip-path: inset(0 0 0 100%);
+}
+
+.footer-highlight--hidden::before {
+  clip-path: inset(0 0 0 100%);
+}
+
+.footer-highlight--entering::before {
+  animation: footer-highlight-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.footer-links a.footer-highlight--active::before,
+.footer-social-link.footer-highlight--active::before,
+.footer-links a:focus-visible::before,
+.footer-social-link:focus-visible::before {
+  clip-path: inset(0);
+}
+
+.footer-highlight--exiting::before {
+  animation: footer-highlight-exit 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes footer-highlight-enter {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0); }
+}
+
+@keyframes footer-highlight-exit {
+  from { clip-path: inset(0); }
+  to { clip-path: inset(0 0 0 100%); }
 }
 
 /* Newsletter */
@@ -376,16 +462,31 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 }
 
 .footer-social-link {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 30px;
+  height: 30px;
   color: var(--muted);
   text-decoration: none;
   transition: color 150ms ease;
 }
 
 .footer-social-link:hover {
-  color: var(--ink);
+  color: #fff;
+}
+
+.footer-social-link:focus-visible {
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-highlight--entering::before,
+  .footer-highlight--exiting::before {
+    animation-duration: 1ms;
+  }
 }
 
 /* Theme toggle button */
