@@ -1,5 +1,32 @@
 ﻿<template>
-  <footer id="kontak" class="site-footer">
+  <footer id="kontak" class="site-footer" :class="theme === 'dark' ? 'site-footer--dark' : 'site-footer--light'">
+    <div class="footer-background" aria-hidden="true">
+      <ShapeWaves
+        text="Nafasy"
+        font-family='Geist, "Geist Sans", system-ui, sans-serif'
+        :font-weight="500"
+        :text-size="0.44"
+        shapes="mixed"
+        :cell-size="10"
+        :dot-size="0.58"
+        :color="theme === 'dark' ? '#171717' : '#d0d0cd'"
+        :hover-color="theme === 'dark' ? '#279772' : '#279772'"
+        :background-color="theme === 'dark' ? '#000000' : '#f5f5f2'"
+        :speed="0.32"
+        :scale="1.1"
+        :contrast="0.85"
+        :brightness="0.3"
+        :flow="0"
+        :direction="0"
+        :fade="0.35"
+        interactive
+        :splash-radius="44"
+        :splash-strength="0.35"
+        :glow="0.08"
+        intro
+        :intro-duration="1.6"
+      />
+    </div>
     <div class="footer-wrap">
 
       <!-- ══ TOP: brand + kolom + newsletter ══ -->
@@ -122,6 +149,7 @@
 <script setup lang="ts">
 import { ref, defineComponent, h, markRaw } from 'vue'
 import { useTheme } from '../../composables/useTheme'
+import ShapeWaves from './ShapeWaves.vue'
 
 type SocialLink = {
   label: string
@@ -193,16 +221,63 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 <style scoped>
 /* ══ Mengikuti tema — background & teks dari design token ══ */
 .site-footer {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
   width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   background: var(--background);
   color: var(--text);
-  border-top: 1px solid var(--line);
+}
+
+.site-footer::before {
+  position: absolute;
+  z-index: 0;
+  top: -160px;
+  right: 0;
+  left: 0;
+  height: 200px;
+  background: linear-gradient(to bottom, transparent, var(--background));
+  content: '';
+  pointer-events: none;
+}
+
+.site-footer--dark {
+  --background: #080808;
+  --surface: #101010;
+  --text: #f4f4f4;
+  --muted: #b0b0b0;
+  --footer-link: #ffffff;
+  --line: #242424;
+  --ink: #ffffff;
+  --inverse-text: #111111;
+}
+
+.site-footer--light {
+  --background: #f5f5f2;
+  --surface: #ffffff;
+  --text: #242424;
+  --muted: #686865;
+  --footer-link: #111111;
+  --line: #d9d9d4;
+  --ink: #171717;
+  --inverse-text: #f7f7f5;
+}
+
+.footer-background {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  opacity: 1;
+  pointer-events: none;
 }
 
 .footer-wrap {
+  position: relative;
+  z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -277,7 +352,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   width: fit-content;
   padding: 2px 4px;
   margin: -2px -4px;
-  color: var(--muted);
+  color: var(--footer-link);
   font-size: 14px;
   line-height: 1.4;
   text-decoration: none;
@@ -469,7 +544,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   justify-content: center;
   width: 30px;
   height: 30px;
-  color: var(--muted);
+  color: var(--footer-link);
   text-decoration: none;
   transition: color 150ms ease;
 }

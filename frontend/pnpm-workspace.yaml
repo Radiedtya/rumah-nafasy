@@ -1,2 +1,4 @@
 allowBuilds:
+  '@vgpu/adapter-node': true
   biome: true
+  webgpu: true
