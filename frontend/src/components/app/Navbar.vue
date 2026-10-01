@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import { useTheme } from '../../composables/useTheme'
 import SpecularButton from '../ui/SpecularButton.vue'
 
 type NavigationLink = {
   label: string
-  href: string
+  href?: string
+  to?: RouteLocationRaw
 }
 
 defineProps<{
@@ -77,27 +79,27 @@ const closeMobile = () => { mobileOpen.value = false }
         aria-label="Navigasi utama"
       >
         <!-- Brand -->
-        <a
-          :href="brand.href"
+        <RouterLink
+          :to="brand.href"
           :aria-label="brand.ariaLabel"
           class="inline-flex shrink-0 items-center gap-2 pr-7 text-[var(--ink)] no-underline"
         >
           <img src="/icons/64.png" alt="" aria-hidden="true" class="h-6 w-6 object-contain" />
           <span class="text-[19px] font-bold leading-none tracking-[-0.055em]">{{ brand.name }}</span>
-        </a>
+        </RouterLink>
 
         <!-- Nav links — desktop, tengah -->
         <div class="hidden items-center gap-1 md:flex" aria-label="Menu utama">
-          <a
+          <RouterLink
             v-for="link in links"
-            :key="link.href"
-            :href="link.href"
+            :key="link.label"
+            :to="link.to ?? link.href ?? '/'"
             class="nav-highlight px-3.5 py-2 text-[15px] font-normal tracking-[-0.02em] text-[var(--text)] no-underline hover:text-white"
-            :class="`nav-highlight--${navHighlightStates[link.href] ?? 'hidden'}`"
-            @pointerenter="setNavHighlight(link.href, 'entering')"
-            @pointerleave="setNavHighlight(link.href, 'exiting')"
-            @animationend="finishNavHighlight(link.href, $event)"
-          >{{ link.label }}</a>
+            :class="`nav-highlight--${navHighlightStates[link.to?.toString?.() ?? link.href ?? link.label] ?? 'hidden'}`"
+            @pointerenter="setNavHighlight((link.to?.toString?.() ?? link.href ?? link.label), 'entering')"
+            @pointerleave="setNavHighlight((link.to?.toString?.() ?? link.href ?? link.label), 'exiting')"
+            @animationend="finishNavHighlight((link.to?.toString?.() ?? link.href ?? link.label), $event)"
+          >{{ link.label }}</RouterLink>
         </div>
 
         <!-- Actions kanan — desktop -->
@@ -166,9 +168,9 @@ const closeMobile = () => { mobileOpen.value = false }
     >
       <!-- Topbar -->
       <div class="flex items-center justify-between h-[60px] border-b border-[var(--line)] shrink-0">
-        <a :href="brand.href" class="inline-flex items-center no-underline" @click="closeMobile">
+        <RouterLink :to="brand.href" class="inline-flex items-center no-underline" @click="closeMobile">
           <img src="/icons/64.png" alt="" aria-hidden="true" class="w-8 h-8 object-contain" />
-        </a>
+        </RouterLink>
         <button
           type="button"
           class="inline-flex items-center justify-center w-8 h-8 bg-transparent border-none cursor-pointer text-[var(--muted)] hover:text-[var(--text)] transition-colors"
@@ -183,13 +185,13 @@ const closeMobile = () => { mobileOpen.value = false }
 
       <!-- Nav links — scrollable -->
       <nav class="flex flex-col flex-1 overflow-y-auto" aria-label="Menu mobile">
-        <a
+        <RouterLink
           v-for="link in links"
-          :key="link.href"
-          :href="link.href"
+          :key="link.label"
+          :to="link.to ?? link.href ?? '/'"
           class="block py-[17px] text-[17px] font-normal text-[var(--muted)] no-underline border-b border-[var(--line)] tracking-tight hover:text-[var(--text)] transition-colors duration-150 first:border-t first:border-[var(--line)]"
           @click="closeMobile"
-        >{{ link.label }}</a>
+        >{{ link.label }}</RouterLink>
       </nav>
 
       <!-- Footer: theme switch + CTA -->

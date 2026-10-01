@@ -34,10 +34,10 @@
 
         <!-- Brand -->
         <div class="footer-brand-col">
-          <a href="/" class="footer-brand" aria-label="Beranda Rumah Nafasy">
+          <RouterLink to="/" class="footer-brand" aria-label="Beranda Rumah Nafasy">
             <img src="/icons/64.png" alt="" aria-hidden="true" class="footer-brand-icon" />
             <span class="footer-brand-name">Rumah Nafasy</span>
-          </a>
+          </RouterLink>
         </div>
 
         <!-- Perusahaan -->
@@ -225,6 +225,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   z-index: 2;
   isolation: isolate;
   width: 100%;
+  min-height: 100vh;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -235,10 +236,10 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 .site-footer::before {
   position: absolute;
   z-index: 0;
-  top: -160px;
+  top: -220px;
   right: 0;
   left: 0;
-  height: 200px;
+  height: 260px;
   background: linear-gradient(to bottom, transparent, var(--background));
   content: '';
   pointer-events: none;
@@ -283,11 +284,9 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   flex-direction: column;
   justify-content: space-between;
   width: 100%;
-  max-width: 1420px;
+    max-width: none;
   margin: 0 auto;
-  /* Padding tetap — formula (100vw - 1420px)/2 menumbuhkan padding di dalam
-     max-width (border-box) sehingga kolom footer berhimpit saat viewport melebar. */
-  padding: 0 40px;
+    padding: 0 clamp(24px, 5vw, 80px);
 }
 
 /* ══ Top grid ══ */
@@ -295,7 +294,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr 0.8fr 1.4fr;
   gap: 56px;
-  padding: 72px 0 64px;
+  padding: clamp(96px, 11vh, 144px) 0 72px;
   flex: 1;
   align-items: start;
 }
@@ -321,7 +320,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 .footer-brand-name {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.04em;
 }
@@ -331,7 +330,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   margin: 0 0 18px;
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -353,8 +352,8 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   padding: 2px 4px;
   margin: -2px -4px;
   color: var(--footer-link);
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 17px;
+  line-height: 1.45;
   text-decoration: none;
   transition: color 150ms ease;
 }
@@ -377,11 +376,11 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 
 .footer-links a::before,
 .footer-social-link::before {
-  clip-path: inset(0 0 0 100%);
+  clip-path: inset(100% 0 0 0);
 }
 
 .footer-highlight--hidden::before {
-  clip-path: inset(0 0 0 100%);
+  clip-path: inset(100% 0 0 0);
 }
 
 .footer-highlight--entering::before {
@@ -400,13 +399,13 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 }
 
 @keyframes footer-highlight-enter {
-  from { clip-path: inset(0 100% 0 0); }
+  from { clip-path: inset(100% 0 0 0); }
   to { clip-path: inset(0); }
 }
 
 @keyframes footer-highlight-exit {
   from { clip-path: inset(0); }
-  to { clip-path: inset(0 0 0 100%); }
+  to { clip-path: inset(100% 0 0 0); }
 }
 
 /* Newsletter */
@@ -417,7 +416,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 .footer-newsletter-desc {
   margin: 0 0 16px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.6;
 }
 
@@ -446,7 +445,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   background: var(--background);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
 }
 
@@ -462,7 +461,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -498,7 +497,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 .footer-copyright {
   margin: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .footer-licenses {
@@ -606,7 +605,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 @media (max-width: 600px) {
   .footer-top {
     grid-template-columns: 1fr 1fr;
-    padding: 48px 0 40px;
+    padding: 64px 0 40px;
   }
 
   .footer-brand-col,

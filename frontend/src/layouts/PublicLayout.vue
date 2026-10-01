@@ -1,20 +1,34 @@
 ﻿<script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
 import Footer from '../components/app/Footer.vue'
 import Navbar from '../components/app/Navbar.vue'
 import { useTheme } from '../composables/useTheme'
 
 const { initializeTheme } = useTheme()
+const route = useRoute()
 
 onMounted(initializeTheme)
 
-const navigationLinks: { label: string; href: string }[] = [
-  { label: 'Cara Kerja', href: '#cara-kerja' },
-  { label: 'Psikolog', href: '#ahli' },
-  { label: 'Layanan', href: '#kategori' },
-  { label: 'Ulasan', href: '#ulasan' },
-  { label: 'FAQ', href: '#faq' },
-]
+const navigationLinks = computed(() => {
+  const sectionTo = (id: string): RouteLocationRaw => {
+    if (route.path === '/') {
+      return { path: '/', hash: `#${id}` }
+    }
+
+    return { path: '/', hash: `#${id}` }
+  }
+
+  return [
+    { label: 'Cara Kerja', to: sectionTo('cara-kerja') },
+    { label: 'Psikolog', to: sectionTo('ahli') },
+    { label: 'Layanan', to: sectionTo('kategori') },
+    { label: 'Ulasan', to: sectionTo('ulasan') },
+    { label: 'FAQ', to: sectionTo('faq') },
+    { label: 'Tentang', to: '/about' },
+  ]
+})
 
 const socialLinks = [
   { label: 'Bluesky', href: 'https://bsky.app', icon: 'bluesky' as const },
@@ -39,7 +53,7 @@ const socialLinks = [
     />
 
     <main class="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex-1 flex flex-col">
-      <RouterView />
+      <RouterView :key="route.fullPath" />
     </main>
 
     <Footer :copyright="`© ${new Date().getFullYear()} Rumah Nafasy. Seluruh hak dilindungi.`" :social-links="socialLinks" />

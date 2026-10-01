@@ -21,13 +21,19 @@ const initializeTheme = () => {
     return
   }
 
-  const savedTheme = localStorage.getItem(STORAGE_KEY)
-
+  const savedTheme = window.localStorage.getItem(STORAGE_KEY)
   const initialTheme: Theme =
     savedTheme === 'dark' || savedTheme === 'light'
       ? savedTheme
-      : 'light'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+
   applyTheme(initialTheme)
+}
+
+if (typeof window !== 'undefined') {
+  initializeTheme()
 }
 
 const toggleTheme = () => {
