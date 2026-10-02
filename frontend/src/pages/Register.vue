@@ -24,7 +24,7 @@ async function completeGoogleAuth(code: string) {
       body: JSON.stringify({ code }),
     })
     auth.setSession(res.data.token, res.data.user)
-    router.push('/dashboard')
+    router.push('/form')
   } catch (err: any) {
     errors.value = { form: err.message || 'Gagal menyelesaikan login Google.' }
   } finally {

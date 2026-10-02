@@ -5,6 +5,19 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/32.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rumah Nafasy</title>
+    <script>
+      (function () {
+        try {
+          const stored = localStorage.getItem('rumah-nafasy-theme');
+          const preferred = stored === 'light' || stored === 'dark' ? stored : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.dataset.theme = preferred;
+          document.documentElement.style.backgroundColor = preferred === 'dark' ? '#000000' : '#ffffff';
+        } catch (error) {
+          document.documentElement.dataset.theme = 'light';
+          document.documentElement.style.backgroundColor = '#ffffff';
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">

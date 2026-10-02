@@ -86,7 +86,7 @@ onMounted(async () => {
     })
     auth.setSession(res.data.token, res.data.user)
 
-    router.replace('/dashboard')
+  router.replace('/form')
   } catch (err: any) {
     status.value = 'error'
     errorMessage.value = err.message || 'Gagal menyelesaikan login Google.'

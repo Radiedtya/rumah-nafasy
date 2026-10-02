@@ -121,7 +121,7 @@ async function submit() {
   try {
     await auth.verifyEmail(email.value, code.value, verifyHandle.value)
     successMessage.value = 'Email terverifikasi! Mengalihkan ke dashboard…'
-    setTimeout(() => router.push('/dashboard'), 900)
+    setTimeout(() => router.push('/form'), 900)
   } catch (err: any) {
     // Reset kotak supaya user ketik ulang
     boxes.value = Array(DIGITS).fill('')

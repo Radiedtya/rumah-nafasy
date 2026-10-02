@@ -291,6 +291,40 @@ h1, h2, h3, h4, h5, h6, .font-display {
   right: 0;
 }
 
+/* About page uses open, full-width sections rather than the framed home layout. */
+.app-shell > main:has(.about-page) {
+  max-width: 1440px;
+  padding-left: clamp(24px, 5vw, 80px);
+  padding-right: clamp(24px, 5vw, 80px);
+  --rail-top: 0px;
+}
+
+.app-shell > main:has(.about-page)::before,
+.app-shell > main:has(.about-page)::after {
+  display: none;
+}
+
+.app-shell main:has(.about-page) > section {
+  border: 0;
+}
+
+/* Service page uses a wider editorial canvas without the home page rails. */
+.app-shell > main:has(.service-page) {
+  max-width: 1600px;
+  padding-left: clamp(24px, 5vw, 80px);
+  padding-right: clamp(24px, 5vw, 80px);
+  --rail-top: 0px;
+}
+
+.app-shell > main:has(.service-page)::before,
+.app-shell > main:has(.service-page)::after {
+  display: none;
+}
+
+.app-shell main:has(.service-page) > section {
+  border: 0;
+}
+
 @media (max-width: 760px) {
   .app-shell > main {
     /* Hero on mobile is also 100svh + 32px margin */

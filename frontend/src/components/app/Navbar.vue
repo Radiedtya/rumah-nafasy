@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import { useTheme } from '../../composables/useTheme'
+import SpecularButton from '../ui/SpecularButton.vue'
 
 type NavigationLink = {
   label: string
-  href: string
+  href?: string
+  to?: RouteLocationRaw
 }
 
 defineProps<{
@@ -19,6 +22,20 @@ defineProps<{
 
 const { theme, toggleTheme } = useTheme()
 const mobileOpen = ref(false)
+const navHighlightStates = ref<Record<string, 'entering' | 'active' | 'exiting'>>({})
+
+const setNavHighlight = (href: string, state: 'entering' | 'exiting') => {
+  navHighlightStates.value = { ...navHighlightStates.value, [href]: state }
+}
+
+const finishNavHighlight = (href: string, event: AnimationEvent) => {
+  if (event.animationName === 'nav-highlight-enter') {
+    navHighlightStates.value = { ...navHighlightStates.value, [href]: 'active' }
+  } else if (event.animationName === 'nav-highlight-exit') {
+    const { [href]: _, ...remainingStates } = navHighlightStates.value
+    navHighlightStates.value = remainingStates
+  }
+}
 
 let savedScrollY = 0
 watch(mobileOpen, (open) => {
@@ -62,23 +79,27 @@ const closeMobile = () => { mobileOpen.value = false }
         aria-label="Navigasi utama"
       >
         <!-- Brand -->
-        <a
-          :href="brand.href"
+        <RouterLink
+          :to="brand.href"
           :aria-label="brand.ariaLabel"
           class="inline-flex shrink-0 items-center gap-2 pr-7 text-[var(--ink)] no-underline"
         >
           <img src="/icons/64.png" alt="" aria-hidden="true" class="h-6 w-6 object-contain" />
           <span class="text-[19px] font-bold leading-none tracking-[-0.055em]">{{ brand.name }}</span>
-        </a>
+        </RouterLink>
 
         <!-- Nav links — desktop, tengah -->
         <div class="hidden items-center gap-1 md:flex" aria-label="Menu utama">
-          <a
+          <RouterLink
             v-for="link in links"
-            :key="link.href"
-            :href="link.href"
-            class="rounded-lg px-3.5 py-2 text-[15px] font-normal tracking-[-0.02em] text-[var(--text)] no-underline transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--text)_7%,transparent)] hover:text-[var(--ink)]"
-          >{{ link.label }}</a>
+            :key="link.label"
+            :to="link.to ?? link.href ?? '/'"
+            class="nav-highlight px-3.5 py-2 text-[15px] font-normal tracking-[-0.02em] text-[var(--text)] no-underline hover:text-white"
+            :class="`nav-highlight--${navHighlightStates[link.to?.toString?.() ?? link.href ?? link.label] ?? 'hidden'}`"
+            @pointerenter="setNavHighlight((link.to?.toString?.() ?? link.href ?? link.label), 'entering')"
+            @pointerleave="setNavHighlight((link.to?.toString?.() ?? link.href ?? link.label), 'exiting')"
+            @animationend="finishNavHighlight((link.to?.toString?.() ?? link.href ?? link.label), $event)"
+          >{{ link.label }}</RouterLink>
         </div>
 
         <!-- Actions kanan — desktop -->
@@ -92,14 +113,29 @@ const closeMobile = () => { mobileOpen.value = false }
             <SunIcon v-if="theme === 'light'" :size="12" aria-hidden="true" />
             <MoonIcon v-else :size="12" aria-hidden="true" />
           </button>
-          <RouterLink
-            to="/dashboard"
-            class="inline-flex h-[40px] items-center rounded-[12px] bg-[var(--ink)] px-4 text-[13px] font-semibold tracking-[-0.02em] text-[var(--inverse-text)] no-underline transition-opacity duration-150 hover:opacity-80"
-          >
-            Masuk Dashboard
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
-              <path d="M2.5 7h9M7.5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <RouterLink to="/form" custom v-slot="{ navigate }">
+            <SpecularButton
+              size="sm"
+              :radius="12"
+              tint="#111111"
+              :tint-opacity="1"
+              :blur="0"
+              text-color="#ffffff"
+              line-color="#ffffff"
+              base-color="#111111"
+              :intensity="0.7"
+              :shine-size="10"
+              :shine-fade="40"
+              :thickness="1"
+              :speed="0.35"
+              follow-mouse
+              :proximity="250"
+              :auto-animate="false"
+              class="!h-[44px] !min-w-[176px] !px-6 !py-0 !text-[14px] !font-semibold tracking-[-0.02em] whitespace-nowrap"
+              @click="navigate"
+            >
+              Ayo Memulai 🤗
+            </SpecularButton>
           </RouterLink>
         </div>
 
@@ -132,9 +168,9 @@ const closeMobile = () => { mobileOpen.value = false }
     >
       <!-- Topbar -->
       <div class="flex items-center justify-between h-[60px] border-b border-[var(--line)] shrink-0">
-        <a :href="brand.href" class="inline-flex items-center no-underline" @click="closeMobile">
+        <RouterLink :to="brand.href" class="inline-flex items-center no-underline" @click="closeMobile">
           <img src="/icons/64.png" alt="" aria-hidden="true" class="w-8 h-8 object-contain" />
-        </a>
+        </RouterLink>
         <button
           type="button"
           class="inline-flex items-center justify-center w-8 h-8 bg-transparent border-none cursor-pointer text-[var(--muted)] hover:text-[var(--text)] transition-colors"
@@ -149,13 +185,13 @@ const closeMobile = () => { mobileOpen.value = false }
 
       <!-- Nav links — scrollable -->
       <nav class="flex flex-col flex-1 overflow-y-auto" aria-label="Menu mobile">
-        <a
+        <RouterLink
           v-for="link in links"
-          :key="link.href"
-          :href="link.href"
+          :key="link.label"
+          :to="link.to ?? link.href ?? '/'"
           class="block py-[17px] text-[17px] font-normal text-[var(--muted)] no-underline border-b border-[var(--line)] tracking-tight hover:text-[var(--text)] transition-colors duration-150 first:border-t first:border-[var(--line)]"
           @click="closeMobile"
-        >{{ link.label }}</a>
+        >{{ link.label }}</RouterLink>
       </nav>
 
       <!-- Footer: theme switch + CTA -->
@@ -186,12 +222,61 @@ const closeMobile = () => { mobileOpen.value = false }
         </div>
 
         <!-- CTA -->
-        <a
-          href="#mulai"
+        <RouterLink
+          to="/form"
           class="flex items-center justify-center h-[50px] rounded-xl bg-[var(--ink)] text-[var(--inverse-text)] text-[15px] font-semibold no-underline tracking-tight hover:opacity-80 transition-opacity duration-150"
           @click="closeMobile"
-        >Mulai Sekarang</a>
+        >Ayo Memulai 🫂</RouterLink>
       </div>
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.nav-highlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.nav-highlight::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #48008c;
+  content: '';
+}
+
+.nav-highlight--hidden::before {
+  clip-path: inset(0 0 0 100%);
+}
+
+.nav-highlight--entering::before {
+  animation: nav-highlight-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.nav-highlight--active::before,
+.nav-highlight:focus-visible::before {
+  clip-path: inset(0);
+}
+
+.nav-highlight--exiting::before {
+  animation: nav-highlight-exit 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes nav-highlight-enter {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0); }
+}
+
+@keyframes nav-highlight-exit {
+  from { clip-path: inset(0); }
+  to { clip-path: inset(0 0 0 100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-highlight--entering::before,
+  .nav-highlight--exiting::before {
+    animation-duration: 1ms;
+  }
+}
+</style>

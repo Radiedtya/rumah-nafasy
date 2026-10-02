@@ -98,9 +98,10 @@ const faqs = [
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-top: -1px;
-  padding: 72px 0 0;
+  padding: 72px 0 160px;
   background: var(--background);
   border-top: 1px solid var(--line);
+  border-bottom: 0;
   z-index: 1;
   overflow: hidden;
 }
@@ -170,6 +171,10 @@ const faqs = [
 
 .faq-item {
   border-bottom: 1px solid var(--line);
+}
+
+.faq-item:last-child {
+  border-bottom: 0;
 }
 
 .faq-trigger {

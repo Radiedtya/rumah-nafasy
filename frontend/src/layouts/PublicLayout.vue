@@ -1,20 +1,20 @@
 ﻿<script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import Footer from '../components/app/Footer.vue'
 import Navbar from '../components/app/Navbar.vue'
 import { useTheme } from '../composables/useTheme'
 
 const { initializeTheme } = useTheme()
+const route = useRoute()
 
 onMounted(initializeTheme)
 
-const navigationLinks: { label: string; href: string }[] = [
-  { label: 'Cara Kerja', href: '#cara-kerja' },
-  { label: 'Psikolog', href: '#ahli' },
-  { label: 'Layanan', href: '#kategori' },
-  { label: 'Ulasan', href: '#ulasan' },
-  { label: 'FAQ', href: '#faq' },
-]
+const navigationLinks = computed(() => [
+  { label: 'Layanan', to: '/service' },
+  { label: 'Tentang', to: '/about' },
+  { label: 'Galeri', to: '/gallry' },
+])
 
 const socialLinks = [
   { label: 'Bluesky', href: 'https://bsky.app', icon: 'bluesky' as const },
@@ -26,7 +26,7 @@ const socialLinks = [
 
 <template>
   <div
-    class="app-shell flex min-h-svh flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility] overflow-x-hidden"
+    class="app-shell flex min-h-svh flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility] overflow-x-clip"
   >
     <Navbar
       :brand="{
@@ -39,7 +39,7 @@ const socialLinks = [
     />
 
     <main class="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex-1 flex flex-col">
-      <RouterView />
+      <RouterView :key="route.fullPath" />
     </main>
 
     <Footer :copyright="`© ${new Date().getFullYear()} Rumah Nafasy. Seluruh hak dilindungi.`" :social-links="socialLinks" />

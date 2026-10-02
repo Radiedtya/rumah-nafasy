@@ -1,5 +1,32 @@
 ﻿<template>
-  <footer id="kontak" class="site-footer">
+  <footer id="kontak" class="site-footer" :class="theme === 'dark' ? 'site-footer--dark' : 'site-footer--light'">
+    <div class="footer-background" aria-hidden="true">
+      <ShapeWaves
+        text="Nafasy"
+        font-family='Geist, "Geist Sans", system-ui, sans-serif'
+        :font-weight="500"
+        :text-size="0.44"
+        shapes="mixed"
+        :cell-size="10"
+        :dot-size="0.58"
+        :color="theme === 'dark' ? '#171717' : '#d0d0cd'"
+        :hover-color="theme === 'dark' ? '#279772' : '#279772'"
+        :background-color="theme === 'dark' ? '#000000' : '#f5f5f2'"
+        :speed="0.32"
+        :scale="1.1"
+        :contrast="0.85"
+        :brightness="0.3"
+        :flow="0"
+        :direction="0"
+        :fade="0.35"
+        interactive
+        :splash-radius="44"
+        :splash-strength="0.35"
+        :glow="0.08"
+        intro
+        :intro-duration="1.6"
+      />
+    </div>
     <div class="footer-wrap">
 
       <!-- ══ TOP: brand + kolom + newsletter ══ -->
@@ -7,16 +34,16 @@
 
         <!-- Brand -->
         <div class="footer-brand-col">
-          <a href="/" class="footer-brand" aria-label="Beranda Rumah Nafasy">
+          <RouterLink to="/" class="footer-brand" aria-label="Beranda Rumah Nafasy">
             <img src="/icons/64.png" alt="" aria-hidden="true" class="footer-brand-icon" />
             <span class="footer-brand-name">Rumah Nafasy</span>
-          </a>
+          </RouterLink>
         </div>
 
         <!-- Perusahaan -->
         <div class="footer-col">
           <h3 class="footer-col-title">Perusahaan</h3>
-          <ul class="footer-links" role="list">
+          <ul class="footer-links" role="list" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <li><a href="#">Harga layanan</a></li>
             <li><a href="#">Ulasan klien</a></li>
             <li><a href="#">Karier</a></li>
@@ -33,7 +60,7 @@
         <!-- Sumber Daya -->
         <div class="footer-col">
           <h3 class="footer-col-title">Sumber Daya</h3>
-          <ul class="footer-links" role="list">
+          <ul class="footer-links" role="list" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <li><a href="#">Pusat bantuan</a></li>
             <li><a href="#">Komunitas kesehatan mental</a></li>
             <li><a href="#">Blog</a></li>
@@ -46,7 +73,7 @@
         <!-- Legal -->
         <div class="footer-col">
           <h3 class="footer-col-title">Legal</h3>
-          <ul class="footer-links" role="list">
+          <ul class="footer-links" role="list" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <li><a href="#">Kebijakan privasi</a></li>
             <li><a href="#">Syarat penggunaan</a></li>
             <li><a href="#">Aksesibilitas</a></li>
@@ -92,7 +119,7 @@
         </div>
 
         <div class="footer-bottom-right">
-          <nav class="footer-social" aria-label="Media sosial Rumah Nafasy">
+          <nav class="footer-social" aria-label="Media sosial Rumah Nafasy" @pointerover="handleFooterPointerOver" @pointerout="handleFooterPointerOut" @animationend="handleFooterAnimationEnd">
             <a v-for="s in socials" :key="s.label" :href="s.href" target="_blank" rel="noreferrer" :aria-label="s.label" class="footer-social-link">
               <component :is="s.icon" aria-hidden="true" />
             </a>
@@ -122,6 +149,7 @@
 <script setup lang="ts">
 import { ref, defineComponent, h, markRaw } from 'vue'
 import { useTheme } from '../../composables/useTheme'
+import ShapeWaves from './ShapeWaves.vue'
 
 type SocialLink = {
   label: string
@@ -136,6 +164,40 @@ defineProps<{
 
 const { theme, toggleTheme } = useTheme()
 const email = ref('')
+
+function getFooterLink(target: EventTarget | null): HTMLAnchorElement | null {
+  return target instanceof Element ? target.closest('a') : null
+}
+
+function setFooterHighlight(link: HTMLAnchorElement, state: 'entering' | 'exiting') {
+  link.classList.add('footer-highlight')
+  link.classList.remove('footer-highlight--hidden', 'footer-highlight--entering', 'footer-highlight--active', 'footer-highlight--exiting')
+  link.classList.add(`footer-highlight--${state}`)
+}
+
+function handleFooterPointerOver(event: PointerEvent) {
+  const link = getFooterLink(event.target)
+  if (!link || (event.relatedTarget instanceof Node && link.contains(event.relatedTarget))) return
+  setFooterHighlight(link, 'entering')
+}
+
+function handleFooterPointerOut(event: PointerEvent) {
+  const link = getFooterLink(event.target)
+  if (!link || (event.relatedTarget instanceof Node && link.contains(event.relatedTarget))) return
+  setFooterHighlight(link, 'exiting')
+}
+
+function handleFooterAnimationEnd(event: AnimationEvent) {
+  const link = getFooterLink(event.target)
+  if (!link) return
+  if (link.classList.contains('footer-highlight--entering')) {
+    link.classList.remove('footer-highlight--entering')
+    link.classList.add('footer-highlight--active')
+  } else if (link.classList.contains('footer-highlight--exiting')) {
+    link.classList.remove('footer-highlight--exiting')
+    link.classList.add('footer-highlight--hidden')
+  }
+}
 
 function submitEmail() {
   email.value = ''
@@ -159,26 +221,72 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 <style scoped>
 /* ══ Mengikuti tema — background & teks dari design token ══ */
 .site-footer {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
   width: 100%;
+  min-height: 100vh;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   background: var(--background);
   color: var(--text);
-  border-top: 1px solid var(--line);
+}
+
+.site-footer::before {
+  position: absolute;
+  z-index: 0;
+  top: -220px;
+  right: 0;
+  left: 0;
+  height: 260px;
+  background: linear-gradient(to bottom, transparent, var(--background));
+  content: '';
+  pointer-events: none;
+}
+
+.site-footer--dark {
+  --background: #080808;
+  --surface: #101010;
+  --text: #f4f4f4;
+  --muted: #b0b0b0;
+  --footer-link: #ffffff;
+  --line: #242424;
+  --ink: #ffffff;
+  --inverse-text: #111111;
+}
+
+.site-footer--light {
+  --background: #f5f5f2;
+  --surface: #ffffff;
+  --text: #242424;
+  --muted: #686865;
+  --footer-link: #111111;
+  --line: #d9d9d4;
+  --ink: #171717;
+  --inverse-text: #f7f7f5;
+}
+
+.footer-background {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  opacity: 1;
+  pointer-events: none;
 }
 
 .footer-wrap {
+  position: relative;
+  z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   width: 100%;
-  max-width: 1420px;
+    max-width: none;
   margin: 0 auto;
-  /* Padding tetap — formula (100vw - 1420px)/2 menumbuhkan padding di dalam
-     max-width (border-box) sehingga kolom footer berhimpit saat viewport melebar. */
-  padding: 0 40px;
+    padding: 0 clamp(24px, 5vw, 80px);
 }
 
 /* ══ Top grid ══ */
@@ -186,7 +294,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr 0.8fr 1.4fr;
   gap: 56px;
-  padding: 72px 0 64px;
+  padding: clamp(96px, 11vh, 144px) 0 72px;
   flex: 1;
   align-items: start;
 }
@@ -212,7 +320,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 .footer-brand-name {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.04em;
 }
@@ -222,7 +330,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   margin: 0 0 18px;
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -237,15 +345,67 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 }
 
 .footer-links a {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.4;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  color: var(--footer-link);
+  font-size: 17px;
+  line-height: 1.45;
   text-decoration: none;
   transition: color 150ms ease;
 }
 
 .footer-links a:hover {
-  color: var(--ink);
+  color: #fff;
+}
+
+.footer-links a:focus-visible {
+  color: #fff;
+}
+
+.footer-highlight::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: #48008c;
+  content: '';
+}
+
+.footer-links a::before,
+.footer-social-link::before {
+  clip-path: inset(100% 0 0 0);
+}
+
+.footer-highlight--hidden::before {
+  clip-path: inset(100% 0 0 0);
+}
+
+.footer-highlight--entering::before {
+  animation: footer-highlight-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.footer-links a.footer-highlight--active::before,
+.footer-social-link.footer-highlight--active::before,
+.footer-links a:focus-visible::before,
+.footer-social-link:focus-visible::before {
+  clip-path: inset(0);
+}
+
+.footer-highlight--exiting::before {
+  animation: footer-highlight-exit 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes footer-highlight-enter {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0); }
+}
+
+@keyframes footer-highlight-exit {
+  from { clip-path: inset(0); }
+  to { clip-path: inset(100% 0 0 0); }
 }
 
 /* Newsletter */
@@ -256,7 +416,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 .footer-newsletter-desc {
   margin: 0 0 16px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.6;
 }
 
@@ -285,7 +445,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   background: var(--background);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
 }
 
@@ -301,7 +461,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -337,7 +497,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 .footer-copyright {
   margin: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .footer-licenses {
@@ -376,16 +536,31 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 }
 
 .footer-social-link {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--muted);
+  width: 30px;
+  height: 30px;
+  color: var(--footer-link);
   text-decoration: none;
   transition: color 150ms ease;
 }
 
 .footer-social-link:hover {
-  color: var(--ink);
+  color: #fff;
+}
+
+.footer-social-link:focus-visible {
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-highlight--entering::before,
+  .footer-highlight--exiting::before {
+    animation-duration: 1ms;
+  }
 }
 
 /* Theme toggle button */
@@ -430,7 +605,7 @@ const licenses = ['one', 'two', 'tree', 'four', 'five', 'six', 'seven']
 @media (max-width: 600px) {
   .footer-top {
     grid-template-columns: 1fr 1fr;
-    padding: 48px 0 40px;
+    padding: 64px 0 40px;
   }
 
   .footer-brand-col,
