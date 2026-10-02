@@ -40,7 +40,7 @@ function requireRole(role: string) {
 
 /** Login/register — kalau sudah punya sesi, tidak ada alasan berada di sini. */
 function guestOnly() {
-  return readSession() ? { path: '/dashboard' } : true
+  return readSession() ? { path: '/form' } : true
 }
 
 export const routes: RouteRecordRaw[] = [
@@ -50,7 +50,14 @@ export const routes: RouteRecordRaw[] = [
     children: [
       { path: '', component: () => import('../pages/Home.vue') },
       { path: 'about', component: () => import('../pages/About.vue') },
+      { path: 'gallry', component: () => import('../pages/Gallery.vue') },
+      { path: 'gallery', redirect: '/gallry' },
     ],
+  },
+  {
+    path: '/form',
+    component: () => import('../pages/Form.vue'),
+    meta: { ssg: false },
   },
   {
     path: '/login',

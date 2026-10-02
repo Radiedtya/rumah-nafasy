@@ -1,7 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import type { RouteLocationRaw } from 'vue-router'
 import Footer from '../components/app/Footer.vue'
 import Navbar from '../components/app/Navbar.vue'
 import { useTheme } from '../composables/useTheme'
@@ -11,24 +10,10 @@ const route = useRoute()
 
 onMounted(initializeTheme)
 
-const navigationLinks = computed(() => {
-  const sectionTo = (id: string): RouteLocationRaw => {
-    if (route.path === '/') {
-      return { path: '/', hash: `#${id}` }
-    }
-
-    return { path: '/', hash: `#${id}` }
-  }
-
-  return [
-    { label: 'Cara Kerja', to: sectionTo('cara-kerja') },
-    { label: 'Psikolog', to: sectionTo('ahli') },
-    { label: 'Layanan', to: sectionTo('kategori') },
-    { label: 'Ulasan', to: sectionTo('ulasan') },
-    { label: 'FAQ', to: sectionTo('faq') },
-    { label: 'Tentang', to: '/about' },
-  ]
-})
+const navigationLinks = computed(() => [
+  { label: 'Tentang', to: '/about' },
+  { label: 'Galeri', to: '/gallry' },
+])
 
 const socialLinks = [
   { label: 'Bluesky', href: 'https://bsky.app', icon: 'bluesky' as const },

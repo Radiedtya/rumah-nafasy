@@ -113,7 +113,7 @@ const closeMobile = () => { mobileOpen.value = false }
             <SunIcon v-if="theme === 'light'" :size="12" aria-hidden="true" />
             <MoonIcon v-else :size="12" aria-hidden="true" />
           </button>
-          <RouterLink to="/dashboard" custom v-slot="{ navigate }">
+          <RouterLink to="/form" custom v-slot="{ navigate }">
             <SpecularButton
               size="sm"
               :radius="12"
@@ -134,7 +134,7 @@ const closeMobile = () => { mobileOpen.value = false }
               class="!h-[44px] !min-w-[176px] !px-6 !py-0 !text-[14px] !font-semibold tracking-[-0.02em] whitespace-nowrap"
               @click="navigate"
             >
-              Masuk Dashboard
+              Ayo Memulai 🤗
             </SpecularButton>
           </RouterLink>
         </div>
@@ -222,11 +222,11 @@ const closeMobile = () => { mobileOpen.value = false }
         </div>
 
         <!-- CTA -->
-        <a
-          href="#mulai"
+        <RouterLink
+          to="/form"
           class="flex items-center justify-center h-[50px] rounded-xl bg-[var(--ink)] text-[var(--inverse-text)] text-[15px] font-semibold no-underline tracking-tight hover:opacity-80 transition-opacity duration-150"
           @click="closeMobile"
-        >Mulai Sekarang</a>
+        >Ayo Memulai 🫂</RouterLink>
       </div>
     </div>
   </Teleport>

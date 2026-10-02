@@ -58,7 +58,7 @@ async function completeGoogleLogin(code: string) {
     })
     auth.setSession(res.data.token, res.data.user)
 
-    router.push('/dashboard')
+    router.push('/form')
   } catch (err: any) {
     errors.value = { form: err.message || 'Gagal menyelesaikan login Google.' }
   } finally {
@@ -103,7 +103,7 @@ async function handleLogin() {
   errors.value = {}
   try {
     await auth.login(email.value.trim(), password.value)
-    router.push('/dashboard')
+    router.push('/form')
   } catch (err: any) {
     // ── Gerbang verifikasi email: akun belum verifikasi OTP ─────────────
     if (err.status === 403 && err.errors?.code?.[0] === 'email_unverified') {
