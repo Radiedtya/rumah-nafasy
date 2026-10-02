@@ -11,6 +11,7 @@ const route = useRoute()
 onMounted(initializeTheme)
 
 const navigationLinks = computed(() => [
+  { label: 'Layanan', to: '/service' },
   { label: 'Tentang', to: '/about' },
   { label: 'Galeri', to: '/gallry' },
 ])
@@ -25,7 +26,7 @@ const socialLinks = [
 
 <template>
   <div
-    class="app-shell flex min-h-svh flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility] overflow-x-hidden"
+    class="app-shell flex min-h-svh flex-col bg-[var(--background)] font-body text-[var(--text)] antialiased [font-synthesis:none] [text-rendering:optimizeLegibility] overflow-x-clip"
   >
     <Navbar
       :brand="{

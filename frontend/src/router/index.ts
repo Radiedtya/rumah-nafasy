@@ -50,6 +50,7 @@ export const routes: RouteRecordRaw[] = [
     children: [
       { path: '', component: () => import('../pages/Home.vue') },
       { path: 'about', component: () => import('../pages/About.vue') },
+      { path: 'service', component: () => import('../pages/Service.vue') },
       { path: 'gallry', component: () => import('../pages/Gallery.vue') },
       { path: 'gallery', redirect: '/gallry' },
     ],
